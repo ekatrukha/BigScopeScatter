@@ -95,6 +95,11 @@
 				</exclusion>
 			</exclusions>
 		</dependency>	
+		<dependency>
+			<!-- only used for linear programming, get rid of this, we only need something extremely simple -->
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-math3</artifactId>
+		</dependency>
 		<!-- Bioformats opener -->
 		<dependency>
 			<groupId>ch.epfl.biop</groupId>

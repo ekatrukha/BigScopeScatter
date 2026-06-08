@@ -3,8 +3,10 @@ package logcolocalization;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.DoubleUnaryOperator;
 
+import org.apache.commons.math3.analysis.function.Asinh;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.cache.img.DiskCachedCellImg;
 import net.imglib2.cache.img.DiskCachedCellImgFactory;
@@ -20,6 +22,7 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Cast;
+import net.imglib2.view.Views;
 
 import logcolocalization.io.SpimDataLoader;
 import ij.IJ;
@@ -41,56 +44,6 @@ public class LogColocalization implements PlugIn
 	{
     }
 	
-	public static < T extends RealType< T > & NativeType< T > > ImagePlus getHistogram(
-			final RandomAccessibleInterval<T> channel1, 
-			final RandomAccessibleInterval<T> channel2, final int nBins, DoubleUnaryOperator f, 
-			final double [] minmax1, 
-			final double [] minmax2)
-	{
-		double min1 = f.applyAsDouble( minmax1[0] );
-		double max1 = f.applyAsDouble( minmax1[1] );
-		double min2 = f.applyAsDouble( minmax2[0] );
-		double max2 = f.applyAsDouble( minmax2[1] );		
-
-		Real1dBinMapper<FloatType> mapper1 = new Real1dBinMapper<>(min1, max1, nBins, false);
-		Real1dBinMapper<FloatType> mapper2 = new Real1dBinMapper<>(min2, max2, nBins, false);
-		
-		final ArrayList<BinMapper1d<FloatType>> mappers = new ArrayList<>();
-		mappers.add (mapper1);
-		mappers.add (mapper2);
-		HistogramNd<FloatType> histogram = new HistogramNd<>(mappers);
-		ArrayList<Iterable<FloatType>> list = new ArrayList<>();
-		RandomAccessibleInterval< FloatType > real1 = Converters.convert( channel1, (i,o) -> {o.set( (float)f.applyAsDouble( i.getRealDouble()));}, new FloatType() );
-		RandomAccessibleInterval< FloatType > real2 = Converters.convert( channel2, (i,o) -> {o.set( (float)f.applyAsDouble( i.getRealDouble()));}, new FloatType() );
-		list.add( real1 );
-		list.add( real2 );
-		histogram.countData( list );
-
-		RandomAccessibleInterval< FloatType > histFloat = Converters.convert( histogram, (i,o) -> o.set(i.getIntegerLong()), new FloatType() );
-		final ImagePlus imp = ImageJFunctions.show(histFloat);
-    	final double binWx = (max1-min1)/nBins;
-    	final double binWy = (max2-min2)/nBins;	
-		final ImageCanvas canvas = imp.getCanvas();
-		final ImageProcessor ip = imp.getProcessor();
-		canvas.addMouseMotionListener(new MouseMotionAdapter() {
-		    @Override
-		    public void mouseMoved(MouseEvent e) {
-		        int x = canvas.offScreenX(e.getX());
-		        int y = canvas.offScreenY(e.getY());
-
-		        double myX = Math.exp(min1 + (x+0.5)*binWx);//,10);
-		        double myY = Math.exp(min2 + (y+0.5)*binWy);//,10);
-		        float fCount = ip.getf( x, y );
-		        IJ.showStatus(
-		            String.format("Count %.0f, Int1=%.2f (%d), Int2=%.2f (%d)", fCount, myX, x, myY, y)
-		        );
-		    }
-		});
-		
-		//ImagePlus imp = ImageJFunctions.show( histogram );
-		return imp;
-	}
-
 	/**
 	 * Main method for debugging.
 	 *
@@ -118,80 +71,147 @@ public class LogColocalization implements PlugIn
 		RandomAccessibleInterval<UnsignedShortType> channel2 = 
 				Cast.unchecked(  imgLoader.getSetupImgLoader(1).getImage(0));
 
-		double [] minmax1 = new double [] {129, 65535};
-		double [] minmax2 = new double [] {129, 65535};
-		int nBins = 256;
-		final ImagePlus imp = getHistogram(channel1, channel2, nBins, x -> Math.sqrt( x - 128.0 ), 
-				minmax1, minmax2);
-
-
-		imp.show();
-//		int bins = 512;
-//		double min1 = 20;
-//		double max1 = 65500;
-//		double min2 = 20;
-//		double max2 = 65500;		
-//
-//     Real1dBinMapper<FloatType> mapper1 = new Real1dBinMapper<>(Math.log10( min1 ), Math.log10(max1), bins, false);
-//		Real1dBinMapper<FloatType> mapper2 = new Real1dBinMapper<>(Math.log10(min2), Math.log10(max2), bins, false);
-//		ArrayList<BinMapper1d<FloatType>> mappers = new ArrayList<>();
-//
-//		mappers.add (mapper1);
-//		mappers.add (mapper2);
-//		HistogramNd<FloatType> histogram = new HistogramNd<>(mappers);
-//		ArrayList<Iterable<FloatType>> list = new ArrayList<>();
-//		RandomAccessibleInterval< FloatType > real1 = Converters.convert( channel1, (i,o) -> {o.set( (float)Math.log10( i.getInteger()));}, new FloatType() );
-//		RandomAccessibleInterval< FloatType > real2 = Converters.convert( channel2, (i,o) -> {o.set( (float) Math.log10( i.getInteger()));}, new FloatType() );
-//		list.add( real1 );
-//		list.add( real2 );
-//		histogram.countData( list );
-//		
-//		RandomAccessibleInterval< FloatType > histFloat = Converters.convert( histogram, (i,o) -> o.set(i.getIntegerLong()), new FloatType() );
-//		ImageJFunctions.show( histogram );
-//		ImageJFunctions.show(histFloat);
+		double [] minmax1 = new double [] {20, 65535};
+		double [] minmax2 = new double [] {20, 65535};
+		int nBins = 512;
+	
+//		final ImagePlus imp = getHistogram(channel1, channel2, nBins, x -> Math.log( x), 
+//				minmax1, minmax2);
+//		imp.show();
 		
-		
-		
-		
-//		ImagePlus mapImg = IJ.openImage( "/home/eugene/Desktop/projects/BrainQuant/cyto_fluo/cytofluo_map3.tif" );
-//		//ImagePlus mapImg = IJ.openImage( "/home/eugene/Desktop/projects/BrainQuant/test/map.tif" );
-//		final ImageProcessor mapIP = mapImg.getProcessor();
-//		long[] dims = channel1.dimensionsAsLongArray();
-//		int[] blockSize = { 32, 32, 32 };
-//		DiskCachedCellImgOptions options = DiskCachedCellImgOptions.options()
-//			    .cellDimensions(blockSize);
-//		DiskCachedCellImgFactory<UnsignedShortType> factory = 
-//			    new DiskCachedCellImgFactory<>(new UnsignedShortType(), options);
-//		DiskCachedCellImg< UnsignedShortType, ? > out1 = factory.create(dims);
-//		DiskCachedCellImg< UnsignedShortType, ? > out2 = factory.create(dims);
-//		
-//		LoopBuilder.setImages( channel1, channel2, out1, out2 ).multiThreaded().forEachPixel( (c1,c2,co1,co2)-> 
-//		{
-//			long x = mapper1.map( new FloatType((float)Math.log10( c1.get())));
-//			long y = mapper2.map( new FloatType((float)Math.log10( c2.get())));
-//			if(x>=0 && x<=bins && y>=0 && y<=bins)
-//			{
-//				if(mapIP.get( (int)x, (int) y )>0)
-//				{
-//					co1.set( c1 );
-//					co2.set( c2 );
-//				}
-//			}
-//		});
-//		final ImagePlus ch1 = ImageJFunctions.show( out1 );
-//		final ImagePlus ch2 = ImageJFunctions.show( out2 );
-//		ch1.setDimensions( 1, (int)dims[2], 1 );
-//		ch2.setDimensions( 1, (int)dims[2], 1 );
-//
-//		Calibration cal = new Calibration ();
-//		double [] voxDims = spimData.getSequenceDescription().getViewSetupsOrdered().get( 0 ).getVoxelSize().dimensionsAsDoubleArray();
-//		cal.pixelWidth = voxDims[0];
-//		cal.pixelHeight = voxDims[1];
-//		cal.pixelDepth = voxDims[2];
-//		ch1.setCalibration( cal );
-//		ch2.setCalibration( cal );
+		ImagePlus mapImg = IJ.openImage( "/home/eugene/Desktop/projects/BrainQuant/cyto_fluo/cytofluo_map1b.tif" );
+		double [] voxDims = spimData.getSequenceDescription().getViewSetupsOrdered().get( 0 ).getVoxelSize().dimensionsAsDoubleArray();
+		getImageFromROI(mapImg, channel1, channel2, nBins, x -> Math.log(x), 
+				minmax1, minmax2, voxDims);
 	}
+	
+	public static < T extends RealType< T > & NativeType< T > > ImagePlus getHistogram(
+			final RandomAccessibleInterval<T> channel1, 
+			final RandomAccessibleInterval<T> channel2, final int nBins, DoubleUnaryOperator f, 
+			final double [] minmax1, 
+			final double [] minmax2)
+	{
+		double min1 = f.applyAsDouble( minmax1[0] );
+		double max1 = f.applyAsDouble( minmax1[1] );
+		double min2 = f.applyAsDouble( minmax2[0] );
+		double max2 = f.applyAsDouble( minmax2[1] );		
 
+		Real1dBinMapper<FloatType> mapper1 = new Real1dBinMapper<>(min1, max1, nBins, false);
+		Real1dBinMapper<FloatType> mapper2 = new Real1dBinMapper<>(min2, max2, nBins, false);
+		
+		final ArrayList<BinMapper1d<FloatType>> mappers = new ArrayList<>();
+		mappers.add (mapper1);
+		mappers.add (mapper2);
+		HistogramNd<FloatType> histogram = new HistogramNd<>(mappers);
+		ArrayList<Iterable<FloatType>> list = new ArrayList<>();
+		RandomAccessibleInterval< FloatType > real1 = 
+				Converters.convert( channel1, (i,o) -> 
+				{o.set( (float)f.applyAsDouble( i.getRealDouble()));}, new FloatType() );
+		RandomAccessibleInterval< FloatType > real2 = 
+				Converters.convert( channel2, (i,o) -> 
+				{o.set( (float)f.applyAsDouble( i.getRealDouble()));}, new FloatType() );
+		list.add( real1 );
+		list.add( real2 );
+		histogram.countData( list );
+
+		RandomAccessibleInterval< FloatType > histFloat = 
+				Converters.convert( histogram, (i,o) -> 
+				o.set(i.getIntegerLong()), new FloatType() );
+		final ImagePlus imp = ImageJFunctions.show(histFloat);
+    	final double binWx = (max1 - min1) / nBins;
+    	final double binWy = (max2 - min2) / nBins;	
+		final ImageCanvas canvas = imp.getCanvas();
+		final ImageProcessor ip = imp.getProcessor();
+		canvas.addMouseMotionListener(new MouseMotionAdapter() {
+		    @Override
+		    public void mouseMoved(MouseEvent e) {
+		        int x = canvas.offScreenX(e.getX());
+		        int y = canvas.offScreenY(e.getY());
+
+		        double myX = Math.exp(min1 + (x + 0.5) * binWx);//,10);
+		        double myY = Math.exp(min2 + (y + 0.5) * binWy);//,10);
+		        float fCount = ip.getf( x, y );
+		        IJ.showStatus(
+		            String.format("Count %.0f, Int1=%.2f (%d), Int2=%.2f (%d)", fCount, myX, x, myY, y)
+		        );
+		    }
+		});
+		
+		//ImagePlus imp = ImageJFunctions.show( histogram );
+		return imp;
+	}
+	
+	public static < T extends RealType< T > & NativeType< T > > void 
+	getImageFromROI(final ImagePlus mapImp, final RandomAccessibleInterval<T> channel1, 
+			final RandomAccessibleInterval<T> channel2, final int nBins, DoubleUnaryOperator f, 
+			final double [] minmax1, 
+			final double [] minmax2, final double [] voxDims)
+	{
+		double min1 = f.applyAsDouble( minmax1[0] );
+		double max1 = f.applyAsDouble( minmax1[1] );
+		double min2 = f.applyAsDouble( minmax2[0] );
+		double max2 = f.applyAsDouble( minmax2[1] );		
+
+		Real1dBinMapper<FloatType> mapper1 = new Real1dBinMapper<>(min1, max1, nBins, false);
+		Real1dBinMapper<FloatType> mapper2 = new Real1dBinMapper<>(min2, max2, nBins, false);
+
+		final ImageProcessor mapIP = mapImp.getProcessor();
+		long[] dimsSingle = channel1.dimensionsAsLongArray();
+		long [] dims = new long [dimsSingle.length + 1];
+		for(int d = 0; d < 2; d ++)
+		{
+			dims[d] = dimsSingle[d];
+		}
+		dims[2] = 2;
+		dims[3] = dimsSingle[2];
+		
+		int[] blockSize = { 32, 32, 32 };
+		DiskCachedCellImgOptions options = DiskCachedCellImgOptions.options()
+			    .cellDimensions(blockSize);
+		DiskCachedCellImgFactory<T> factory = 
+			    new DiskCachedCellImgFactory<>(channel1.getType(), options);
+		DiskCachedCellImg< T, ? > out = factory.create(dims);
+		
+		AtomicLong globalPixelCount = new AtomicLong(0);
+		
+		final long totalPixels = dimsSingle[0] * dimsSingle[1] * dimsSingle[2];
+		
+		LoopBuilder.setImages( channel1, channel2, 
+				Views.hyperSlice( out, 2, 0 ),Views.hyperSlice( out, 2, 1 )).
+				multiThreaded().forEachChunk( chunk->
+				{
+					long[] localCount = new long[1];
+					chunk.forEachPixel( (c1,c2,co1,co2)-> 
+					{
+						long x = mapper1.map( new FloatType((float)f.applyAsDouble( c1.getRealDouble())));
+						long y = mapper2.map( new FloatType((float)f.applyAsDouble( c2.getRealDouble())));
+						if(x >= 0 && x <= nBins && y >= 0 && y <= nBins)
+						{
+							if(mapIP.get( (int)x, (int) y )>0)
+							{
+								co1.set( c1 );
+								co2.set( c2 );
+							}
+						}
+						localCount[0]++;
+					});
+					long overallProcessed = globalPixelCount.addAndGet(localCount[0]);
+					double progress = (double) overallProcessed / totalPixels;//*100;
+					IJ.showProgress( progress );
+					return null;
+				}
+				);
+		
+		final ImagePlus impOut = ImageJFunctions.show( out );
+		impOut.setDimensions( 2, (int)dimsSingle[2], 1 );
+
+		final Calibration cal = new Calibration ();
+		cal.pixelWidth = voxDims[0];
+		cal.pixelHeight = voxDims[1];
+		cal.pixelDepth = voxDims[2];
+		impOut.setCalibration( cal );
+
+	}
 
 
 }
