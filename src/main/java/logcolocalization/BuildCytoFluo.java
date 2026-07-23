@@ -16,9 +16,9 @@ import net.imglib2.histogram.Real1dBinMapper;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Cast;
+import net.imglib2.view.Views;
 
 import ij.IJ;
 import ij.ImageJ;
@@ -26,17 +26,16 @@ import ij.ImagePlus;
 import ij.Prefs;
 import ij.gui.GenericDialog;
 import ij.gui.ImageCanvas;
-import ij.io.OpenDialog;
 import ij.plugin.PlugIn;
 import ij.process.ImageProcessor;
 import logcolocalization.io.SpimDataLoader;
 import mpicbg.spim.data.generic.AbstractSpimData;
 import mpicbg.spim.data.generic.sequence.BasicImgLoader;
 
-public class BuildHistogram < T extends RealType< T > & NativeType< T > > implements PlugIn
+public class BuildCytoFluo < T extends RealType< T > & NativeType< T > > implements PlugIn
 {
 
-	final HistogramParameters histParams = new HistogramParameters();
+	final CFGParameters cfgParams = new CFGParameters();
 	
 	int nChannels;
 	
@@ -68,23 +67,31 @@ public class BuildHistogram < T extends RealType< T > & NativeType< T > > implem
 		final BasicImgLoader imgLoader = spimData.getSequenceDescription().getImgLoader();
 		
 		final RandomAccessibleInterval<T> channel1 = 
-				Cast.unchecked(  imgLoader.getSetupImgLoader(histParams.nChannel1).getImage(0));
+				Cast.unchecked(  imgLoader.getSetupImgLoader(cfgParams.nChannel1).getImage(0));
 		final RandomAccessibleInterval<T> channel2 = 
-				Cast.unchecked(  imgLoader.getSetupImgLoader(histParams.nChannel2).getImage(0));
-		final int [] nBins = new int [] {histParams.nBinsX, histParams.nBinsY };
+				Cast.unchecked(  imgLoader.getSetupImgLoader(cfgParams.nChannel2).getImage(0));
 		
-		final ImagePlus imp = getHistogram(channel1, channel2, histParams  );
+		IJ.log("LogColocalization v." + GlobalParameters.sVersion + ": Building cytofluorogram.");
+		cfgParams.printParams();
+		IJ.log("Calculating, please wait...");
+		final ImagePlus imp = getHistogram(channel1, channel2, cfgParams  );
 		
-		imp.setTitle( "cytofluorogram_" + histParams.sDataFilename);
+		imp.setTitle( "cytofluorogram_" + cfgParams.sDataFilename);
+		cfgParams.saveToImagePlus( imp );
 		imp.show();
-		applyHistParameters(imp, histParams);
+		CFGParameters.applyHistParameters(imp, cfgParams);
+
+		
+		CFGParameters dsa = new CFGParameters();
+		//dsa.loadFromImagePlus( imp );
 		IJ.run(imp, "Enhance Contrast", "saturated=0.35");
+		IJ.log("done");
 	}
 	
 	public static < T extends RealType< T > & NativeType< T > > ImagePlus getHistogram(
 			final RandomAccessibleInterval<T> channel1, 
 			final RandomAccessibleInterval<T> channel2, 
-			final HistogramParameters histParams)
+			final CFGParameters histParams)
 	{	
 		final DoubleUnaryOperator f = histParams.getMapFunction();
 		final double min1 = f.applyAsDouble( histParams.minmax1[0] );
@@ -113,30 +120,11 @@ public class BuildHistogram < T extends RealType< T > & NativeType< T > > implem
 		RandomAccessibleInterval< FloatType > histFloat = 
 				Converters.convert( histogram, (i,o) -> 
 				o.set(i.getIntegerLong()), new FloatType() );
+		if(histParams.bFlipY)
+			histFloat = Views.invertAxis( histFloat, 1 );
 		return ImageJFunctions.wrapFloat( histFloat, "" );
 	}
-	
-	public static void applyHistParameters(final ImagePlus imp, final HistogramParameters histParams)
-	{
-		final double binWx = (histParams.minmax1[1] - histParams.minmax1[0]) / histParams.nBinsX;
-    	final double binWy = (histParams.minmax2[1] - histParams.minmax2[0]) / histParams.nBinsY;	
-		final ImageCanvas canvas = imp.getCanvas();
-		final ImageProcessor ip = imp.getProcessor();
-		canvas.addMouseMotionListener(new MouseMotionAdapter() {
-		    @Override
-		    public void mouseMoved(MouseEvent e) {
-		        int x = canvas.offScreenX(e.getX());
-		        int y = canvas.offScreenY(e.getY());
 
-		        double myX = histParams.getInverseMapFunction().applyAsDouble( histParams.minmax1[0] + (x + 0.5) * binWx);//,10);
-		        double myY = histParams.getInverseMapFunction().applyAsDouble( histParams.minmax2[0] + (y + 0.5) * binWy);//,10);
-		        float fCount = ip.getf( x, y );
-		        IJ.showStatus(
-		            String.format("Count %.0f, Int1=%.2f (%d), Int2=%.2f (%d)", fCount, myX, x, myY, y)
-		        );
-		    }
-		});	
-	}
 	
 	public boolean dialogHistParameters()
 	{
@@ -169,43 +157,43 @@ public class BuildHistogram < T extends RealType< T > & NativeType< T > > implem
 		
 		if ( gdHist.wasCanceled() )
 			return false;
-		histParams.nChannel1 = gdHist.getNextChoiceIndex();
-		histParams.nChannel2 = gdHist.getNextChoiceIndex();
-		if(histParams.nChannel1  == histParams.nChannel2)
+		cfgParams.nChannel1 = gdHist.getNextChoiceIndex();
+		cfgParams.nChannel2 = gdHist.getNextChoiceIndex();
+		if(cfgParams.nChannel1  == cfgParams.nChannel2)
 		{
 			IJ.log("Warning! Channel X axis is equal to Channel Y!");
 		}
 		
-		histParams.bFlipY = gdHist.getNextBoolean();
-		GlobalParameters.bInvertY = histParams.bFlipY;
-		Prefs.set("LC.bInvertY", histParams.bFlipY);
+		cfgParams.bFlipY = gdHist.getNextBoolean();
+		GlobalParameters.bInvertY = cfgParams.bFlipY;
+		Prefs.set("LC.bInvertY", cfgParams.bFlipY);
 		
-		histParams.nMapFunction = gdHist.getNextChoiceIndex();		
-		GlobalParameters.nMapFunction = histParams.nMapFunction;
-		Prefs.set("LC.nMapFunction", histParams.nMapFunction);
+		cfgParams.nMapFunction = gdHist.getNextChoiceIndex();		
+		GlobalParameters.nMapFunction = cfgParams.nMapFunction;
+		Prefs.set("LC.nMapFunction", cfgParams.nMapFunction);
 		
-		histParams.nBinsX = (int)gdHist.getNextNumber();
-		GlobalParameters.nBinsX = histParams.nBinsX;
-		Prefs.set("LC.nBinsX", histParams.nBinsX);
+		cfgParams.nBinsX = (int)gdHist.getNextNumber();
+		GlobalParameters.nBinsX = cfgParams.nBinsX;
+		Prefs.set("LC.nBinsX", cfgParams.nBinsX);
 		
-		histParams.nBinsY = (int)gdHist.getNextNumber();
-		GlobalParameters.nBinsY = histParams.nBinsY;
-		Prefs.set("LC.nBinsY", histParams.nBinsY);
+		cfgParams.nBinsY = (int)gdHist.getNextNumber();
+		GlobalParameters.nBinsY = cfgParams.nBinsY;
+		Prefs.set("LC.nBinsY", cfgParams.nBinsY);
 		
-		histParams.minmax1[0] = gdHist.getNextNumber();
-		GlobalParameters.dMinX = histParams.minmax1[0];
+		cfgParams.minmax1[0] = gdHist.getNextNumber();
+		GlobalParameters.dMinX = cfgParams.minmax1[0];
 		Prefs.set("LC.dMinX", GlobalParameters.dMinX);
 		
-		histParams.minmax1[1] = gdHist.getNextNumber();
-		GlobalParameters.dMaxX = histParams.minmax1[1];
+		cfgParams.minmax1[1] = gdHist.getNextNumber();
+		GlobalParameters.dMaxX = cfgParams.minmax1[1];
 		Prefs.set("LC.dMaxX", GlobalParameters.dMaxX);
 		
-		histParams.minmax2[0] = gdHist.getNextNumber();
-		GlobalParameters.dMinY = histParams.minmax2[0];
+		cfgParams.minmax2[0] = gdHist.getNextNumber();
+		GlobalParameters.dMinY = cfgParams.minmax2[0];
 		Prefs.set("LC.dMinY", GlobalParameters.dMinY);
 		
-		histParams.minmax2[1] = gdHist.getNextNumber();
-		GlobalParameters.dMaxY = histParams.minmax2[1];
+		cfgParams.minmax2[1] = gdHist.getNextNumber();
+		GlobalParameters.dMaxY = cfgParams.minmax2[1];
 		Prefs.set("LC.dMaxY", GlobalParameters.dMaxY);
 		
 		return true;
@@ -215,26 +203,26 @@ public class BuildHistogram < T extends RealType< T > & NativeType< T > > implem
 	{
 
 		final File f = new File(sPathFilenameIni);
-		histParams.sDataFilename = f.getName();
-		histParams.sDataPath = f.getParent();
+		cfgParams.sDataFilename = f.getName();
+		cfgParams.sDataPath = f.getParent();
 		boolean bXML = false;
 		
-		if(histParams.sDataFilename.endsWith( "xml" ) || histParams.sDataFilename.endsWith( "h5" ))
+		if(cfgParams.sDataFilename.endsWith( "xml" ) || cfgParams.sDataFilename.endsWith( "h5" ))
 		{
 			bXML = true;
-			if(histParams.sDataFilename.endsWith( "h5" ))
+			if(cfgParams.sDataFilename.endsWith( "h5" ))
 			{
-				String sFilenameh5 = histParams.sDataFilename;
-				histParams.sDataFilename = histParams.sDataFilename.substring( 0, histParams.sDataFilename.length() - 2 );
-				histParams.sDataFilename = histParams.sDataFilename + "xml";
-				IJ.log( "Opening " + histParams.sDataFilename + " instead of " + sFilenameh5 + ".");
+				String sFilenameh5 = cfgParams.sDataFilename;
+				cfgParams.sDataFilename = cfgParams.sDataFilename.substring( 0, cfgParams.sDataFilename.length() - 2 );
+				cfgParams.sDataFilename = cfgParams.sDataFilename + "xml";
+				IJ.log( "Opening " + cfgParams.sDataFilename + " instead of " + sFilenameh5 + ".");
 			}
 		}
 		if(bXML)
 		{
-			return SpimDataLoader.loadHDF5(histParams.getFullDataPathFilename());
+			return SpimDataLoader.loadHDF5(cfgParams.getFullDataPathFilename());
 		}
-		return SpimDataLoader.loadBioFormats( histParams.getFullDataPathFilename());
+		return SpimDataLoader.loadBioFormats( cfgParams.getFullDataPathFilename());
 	}
 	
 	public String openFilenameDialog()
@@ -254,10 +242,11 @@ public class BuildHistogram < T extends RealType< T > & NativeType< T > > implem
 		}
 		return null;
 	}
+	
 	public static void main(String[] args) throws Exception 
 	{
 		new ImageJ();
-		BuildHistogram test = new BuildHistogram();
+		BuildCytoFluo<?> test = new BuildCytoFluo<>();
 		test.run( null);
 	}
 }
