@@ -1,8 +1,5 @@
 package logcolocalization;
 
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionAdapter;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.function.DoubleUnaryOperator;
 
@@ -25,10 +22,7 @@ import ij.ImageJ;
 import ij.ImagePlus;
 import ij.Prefs;
 import ij.gui.GenericDialog;
-import ij.gui.ImageCanvas;
 import ij.plugin.PlugIn;
-import ij.process.ImageProcessor;
-import logcolocalization.io.SpimDataLoader;
 import mpicbg.spim.data.generic.AbstractSpimData;
 import mpicbg.spim.data.generic.sequence.BasicImgLoader;
 
@@ -47,13 +41,14 @@ public class BuildCytoFluo < T extends RealType< T > & NativeType< T > > impleme
 		if(sFilenameINI == null)
 			return;
 		
-		final AbstractSpimData< ? > spimData = getDataFromFilename(sFilenameINI);
+		final AbstractSpimData< ? > spimData = CFGParameters.getDataFromFilename(sFilenameINI, cfgParams);
 		if(spimData == null)
 		{
 			IJ.log( "Error opening: " + sFilenameINI +"\n Not an image file?");
 			return;
 		}
 		nChannels = spimData.getSequenceDescription().getViewSetupsOrdered().size();
+		
 		if(nChannels < 2)
 		{
 			IJ.log( "You need image with at least 2 channels as input");
@@ -80,10 +75,6 @@ public class BuildCytoFluo < T extends RealType< T > & NativeType< T > > impleme
 		cfgParams.saveToImagePlus( imp );
 		imp.show();
 		CFGParameters.applyHistParameters(imp, cfgParams);
-
-		
-		CFGParameters dsa = new CFGParameters();
-		//dsa.loadFromImagePlus( imp );
 		IJ.run(imp, "Enhance Contrast", "saturated=0.35");
 		IJ.log("done");
 	}
@@ -199,33 +190,7 @@ public class BuildCytoFluo < T extends RealType< T > & NativeType< T > > impleme
 		return true;
 	}
 	
-	AbstractSpimData< ? > getDataFromFilename(final String sPathFilenameIni)
-	{
-
-		final File f = new File(sPathFilenameIni);
-		cfgParams.sDataFilename = f.getName();
-		cfgParams.sDataPath = f.getParent();
-		boolean bXML = false;
-		
-		if(cfgParams.sDataFilename.endsWith( "xml" ) || cfgParams.sDataFilename.endsWith( "h5" ))
-		{
-			bXML = true;
-			if(cfgParams.sDataFilename.endsWith( "h5" ))
-			{
-				String sFilenameh5 = cfgParams.sDataFilename;
-				cfgParams.sDataFilename = cfgParams.sDataFilename.substring( 0, cfgParams.sDataFilename.length() - 2 );
-				cfgParams.sDataFilename = cfgParams.sDataFilename + "xml";
-				IJ.log( "Opening " + cfgParams.sDataFilename + " instead of " + sFilenameh5 + ".");
-			}
-		}
-		if(bXML)
-		{
-			return SpimDataLoader.loadHDF5(cfgParams.getFullDataPathFilename());
-		}
-		return SpimDataLoader.loadBioFormats( cfgParams.getFullDataPathFilename());
-	}
-	
-	public String openFilenameDialog()
+	public static String openFilenameDialog()
 	{
 		
 		JFileChooser chooser = new JFileChooser(GlobalParameters.lastDir );
