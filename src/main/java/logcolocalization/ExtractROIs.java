@@ -59,7 +59,7 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 			return ;			
 		}
 		//verify that ROIs are ok
-		if(!verifyROIS())
+		if(!verifyROIs())
 			return;
 		
 		IJ.log( "LogColocalization v." + GlobalParameters.sVersion + " reading parameters from current image." );
@@ -157,6 +157,7 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 		{
 			dims[d] = dimsSingle[d];
 		}
+		//add 2 channel dimensions, always #2 (after XY (01))
 		dims[2] = 2;
 		dims[3] = dimsSingle[2];
 		
@@ -208,7 +209,7 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 		return impOut;
 	}
 	
-	boolean verifyROIS()
+	boolean verifyROIs()
 	{
 		final Roi[] allRois = rm.getRoisAsArray();
 		for (final Roi roi:allRois)
