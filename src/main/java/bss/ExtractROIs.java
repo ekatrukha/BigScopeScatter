@@ -1,4 +1,4 @@
-package logcolocalization;
+package bss;
 
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicLong;
@@ -50,19 +50,19 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 		rm = RoiManager.getInstance2();
 		if (rm == null) 
 		{
-			IJ.error( "LogColocalization error", "No ROIs in ROI manager." );
+			IJ.error( "BigScopeScatter error", "No ROIs in ROI manager." );
 			return;
 		}
 		else if(rm.getCount() < 1)
 		{
-			IJ.error("LogColocalization error", "ROI manager must contain at least one ROI." );
+			IJ.error("BigScopeScatter error", "ROI manager must contain at least one ROI." );
 			return ;			
 		}
 		//verify that ROIs are ok
 		if(!verifyROIs())
 			return;
 		
-		IJ.log( "LogColocalization v." + GlobalParameters.sVersion + " reading parameters from current image." );
+		IJ.log( "BigScopeScatter v." + GlobalParameters.sVersion + " reading parameters from current image." );
 		if(!cfgParams.loadFromImagePlus( imp ))
 		{
 			return;
@@ -177,7 +177,7 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 				multiThreaded().forEachChunk( chunk->
 				{
 					long[] localCount = new long[1];
-					chunk.forEachPixel( (c1,c2,co1,co2)-> 
+					chunk.forEachPixel( (c1, c2, co1, co2) -> 
 					{
 						long x = mapper1.map( new FloatType((float)f.applyAsDouble( c1.getRealDouble())));
 						long y = mapper2.map( new FloatType((float)f.applyAsDouble( c2.getRealDouble())));
@@ -230,18 +230,16 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 	public static void main(String[] args) throws Exception 
 	{
 		new ImageJ();
-		//ImagePlus image = IJ.openImage("/home/eugene/Desktop/projects/LogColocalization/cytofluorogram_1-3.tif");
-		ImagePlus image = IJ.openImage("/home/eugene/Desktop/projects/LogColocalization/cytofluorogram_1-3_inverted.tif");
+		//ImagePlus image = IJ.openImage("/home/eugene/Desktop/projects/BigScopeScatter/cytofluorogram_1-3.tif");
+		ImagePlus image = IJ.openImage("/home/eugene/Desktop/projects/BigScopeScatter/cytofluorogram_1-3_inverted.tif");
 		
 		image.show();
 		RoiManager rMan = RoiManager.getInstance2();
 		if (rMan == null) {
 			rMan = new RoiManager(); // creates a new one if needed
 		}
-		//rMan.open( "/home/eugene/Desktop/projects/LogColocalization/RoiSet.zip" );
-		rMan.open( "/home/eugene/Desktop/projects/LogColocalization/RoiSet_inverted.zip" );
-
-		
+		//rMan.open( "/home/eugene/Desktop/projects/BigScopeScatter/RoiSet.zip" );
+		rMan.open( "/home/eugene/Desktop/projects/BigScopeScatter/RoiSet_inverted.zip" );
 		
 		ExtractROIs<?> test = new ExtractROIs<>();
 		test.run( null);

@@ -1,4 +1,4 @@
-package logcolocalization;
+package bss;
 
 import java.util.ArrayList;
 import java.util.function.DoubleUnaryOperator;
@@ -66,7 +66,7 @@ public class BuildCytoFluo < T extends RealType< T > & NativeType< T > > impleme
 		final RandomAccessibleInterval<T> channel2 = 
 				Cast.unchecked(  imgLoader.getSetupImgLoader(cfgParams.nChannel2).getImage(0));
 		
-		IJ.log("LogColocalization v." + GlobalParameters.sVersion + ": Building cytofluorogram.");
+		IJ.log("BigScopeScatter v." + GlobalParameters.sVersion + ": Building cytofluorogram.");
 		cfgParams.printParams();
 		IJ.log("Calculating, please wait...");
 		final ImagePlus imp = getHistogram(channel1, channel2, cfgParams  );
@@ -157,35 +157,35 @@ public class BuildCytoFluo < T extends RealType< T > & NativeType< T > > impleme
 		
 		cfgParams.bFlipY = gdHist.getNextBoolean();
 		GlobalParameters.bInvertY = cfgParams.bFlipY;
-		Prefs.set("LC.bInvertY", cfgParams.bFlipY);
+		Prefs.set("BSS.bInvertY", cfgParams.bFlipY);
 		
 		cfgParams.nMapFunction = gdHist.getNextChoiceIndex();		
 		GlobalParameters.nMapFunction = cfgParams.nMapFunction;
-		Prefs.set("LC.nMapFunction", cfgParams.nMapFunction);
+		Prefs.set("BSS.nMapFunction", cfgParams.nMapFunction);
 		
 		cfgParams.nBinsX = (int)gdHist.getNextNumber();
 		GlobalParameters.nBinsX = cfgParams.nBinsX;
-		Prefs.set("LC.nBinsX", cfgParams.nBinsX);
+		Prefs.set("BSS.nBinsX", cfgParams.nBinsX);
 		
 		cfgParams.nBinsY = (int)gdHist.getNextNumber();
 		GlobalParameters.nBinsY = cfgParams.nBinsY;
-		Prefs.set("LC.nBinsY", cfgParams.nBinsY);
+		Prefs.set("BSS.nBinsY", cfgParams.nBinsY);
 		
 		cfgParams.minmax1[0] = gdHist.getNextNumber();
 		GlobalParameters.dMinX = cfgParams.minmax1[0];
-		Prefs.set("LC.dMinX", GlobalParameters.dMinX);
+		Prefs.set("BSS.dMinX", GlobalParameters.dMinX);
 		
 		cfgParams.minmax1[1] = gdHist.getNextNumber();
 		GlobalParameters.dMaxX = cfgParams.minmax1[1];
-		Prefs.set("LC.dMaxX", GlobalParameters.dMaxX);
+		Prefs.set("BSS.dMaxX", GlobalParameters.dMaxX);
 		
 		cfgParams.minmax2[0] = gdHist.getNextNumber();
 		GlobalParameters.dMinY = cfgParams.minmax2[0];
-		Prefs.set("LC.dMinY", GlobalParameters.dMinY);
+		Prefs.set("BSS.dMinY", GlobalParameters.dMinY);
 		
 		cfgParams.minmax2[1] = gdHist.getNextNumber();
 		GlobalParameters.dMaxY = cfgParams.minmax2[1];
-		Prefs.set("LC.dMaxY", GlobalParameters.dMaxY);
+		Prefs.set("BSS.dMaxY", GlobalParameters.dMaxY);
 		
 		return true;
 	}
@@ -202,7 +202,7 @@ public class BuildCytoFluo < T extends RealType< T > & NativeType< T > > impleme
 		{
 			String sFolder = chooser.getSelectedFile().getParent();
 			GlobalParameters.lastDir = sFolder;
-			Prefs.set( "LC.lastDir", sFolder );
+			Prefs.set( "BSS.lastDir", sFolder );
 			return chooser.getSelectedFile().getPath();
 		}
 		return null;

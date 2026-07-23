@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package logcolocalization.io;
+package bss.io;
 
 import static net.imglib2.img.basictypeaccess.AccessFlags.VOLATILE;
 
@@ -70,7 +70,7 @@ import bdv.cache.SharedQueue;
 import bdv.util.Affine3DHelpers;
 import bdv.util.volatiles.VolatileViews;
 import bdv.viewer.Source;
-import logcolocalization.io.SourcesToSpimDataBvv.ConvertMode;
+import bss.io.SourcesToSpimDataBvv.ConvertMode;
 import mpicbg.spim.data.generic.sequence.ImgLoaderHint;
 import mpicbg.spim.data.generic.sequence.TypedBasicImgLoader;
 

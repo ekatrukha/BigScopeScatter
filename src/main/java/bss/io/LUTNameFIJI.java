@@ -26,40 +26,43 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package logcolocalization.io;
+package bss.io;
 
-import org.jdom2.Element;
+import mpicbg.spim.data.generic.base.NamedEntity;
 
-import mpicbg.spim.data.SpimDataException;
-import mpicbg.spim.data.XmlHelpers;
-import mpicbg.spim.data.generic.base.ViewSetupAttributeIo;
-import mpicbg.spim.data.generic.base.XmlIoEntity;
-
-
-@ViewSetupAttributeIo(name = "lutnamefiji", type = LUTNameFIJI.class)
-public class XmlIoLutNameFIJI extends XmlIoEntity<LUTNameFIJI> 
+/**
+ * Entity which contains the name of FIJI LUT
+ */
+public class LUTNameFIJI extends NamedEntity implements
+Comparable<LUTNameFIJI>
 {
-	public static final String LUTNAMEFIJI_XML_TAG = "LUTNameFIJI";
-	public static final String NAMELUTFIJI_XML_TAG = "FIJI_LUT_Name";
+	public String sLUTName = "";
 	
-	public XmlIoLutNameFIJI() 
-	{
-		super(LUTNAMEFIJI_XML_TAG, LUTNameFIJI.class);
+	// if isset is false, the display value is discarded
+	public boolean isSet = false;
+	
+	public LUTNameFIJI(final int id, final String name) {
+		super(id, name);
+	}
+	
+	public LUTNameFIJI(final int id) {
+		this(id, Integer.toString(id));
 	}
 	
 	@Override
-	public Element toXml(final LUTNameFIJI lutSet) 
+	public String toString() 
 	{
-		final Element elem = super.toXml(lutSet);
-		elem.addContent(XmlHelpers.textElement(NAMELUTFIJI_XML_TAG,
-			lutSet.sLUTName));
-		return elem;
+		String str = "";
+		str += "set = " + this.isSet + ", ";
+		str += " name = " + sLUTName;
+		return str;
 	}
+	
+	/**
+	 * Compares the {@link #getId() ids}.
+	 */
 	@Override
-	public LUTNameFIJI fromXml(final Element elem) throws SpimDataException {
-		final LUTNameFIJI ds = super.fromXml(elem);
-
-		ds.sLUTName = XmlHelpers.getText(elem, NAMELUTFIJI_XML_TAG);
-		return ds;
+	public int compareTo(final LUTNameFIJI o) {
+		return getId() - o.getId();
 	}
 }

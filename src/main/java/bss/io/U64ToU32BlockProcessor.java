@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package logcolocalization.io;
+package bss.io;
 
 import net.imglib2.algorithm.blocks.AbstractDimensionlessBlockProcessor;
 import net.imglib2.algorithm.blocks.BlockProcessor;

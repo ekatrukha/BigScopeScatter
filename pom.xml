@@ -10,12 +10,12 @@
 	</parent>
 
 	<groupId>nl.uu.science.cellbiology</groupId>       
-	<artifactId>LogColocalization</artifactId> 
+	<artifactId>BigScopeScatter</artifactId> 
 	<version>0.0.1-SNAPSHOT</version>
 
-	<name>LogColocalization</name>                                                   
+	<name>BigScopeScatter</name>                                                   
 	<description> A plugin to build and analyze log scaled cytofluorograms </description> 
-	<url>https://github.com/ekatrukha/LogColocalization</url>                       
+	<url>https://github.com/ekatrukha/BigScopeScatter</url>                       
 	<inceptionYear>2026</inceptionYear>                                           
 	<organization>
 		<name>Cell Biology, Neurobiology and Biophysics Department of Utrecht University</name>
@@ -60,22 +60,22 @@
 	</mailingLists>
 
     <scm>
-        <connection>scm:git:git://github.com/ekatrukha/LogColocalization</connection>
-        <developerConnection>scm:git:git@github.com:ekatrukha/LogColocalization</developerConnection>
-        <tag>LogColocalization-0.0.1</tag>
-        <url>https://github.com/ekatrukha/LogColocalization</url>
+        <connection>scm:git:git://github.com/ekatrukha/BigScopeScatter</connection>
+        <developerConnection>scm:git:git@github.com:ekatrukha/BigScopeScatter</developerConnection>
+        <tag>BigScopeScatter-0.0.1</tag>
+        <url>https://github.com/ekatrukha/BigScopeScatter</url>
     </scm>
     <issueManagement>
         <system>GitHub</system>
-        <url>http://github.com/ekatrukha/LogColocalization/issues</url>
+        <url>http://github.com/ekatrukha/BigScopeScatter/issues</url>
     </issueManagement>
     <ciManagement>
 		<system>GitHub Actions</system>
-		<url>https://github.com/ekatrukha/LogColocalization/actions</url>
+		<url>https://github.com/ekatrukha/BigScopeScatter/actions</url>
     </ciManagement>
 
 	<properties>
-		<package-name>logcolocalization</package-name>    
+		<package-name>bss</package-name>    
 		<license.licenseName>bsd_2</license.licenseName>
         <license.copyrightOwners>Cell Biology, Neurobiology and Biophysics Department of Utrecht University.</license.copyrightOwners>  			
 		<license.excludes>**/resources/**</license.excludes>

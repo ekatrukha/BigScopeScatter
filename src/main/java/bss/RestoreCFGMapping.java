@@ -1,4 +1,4 @@
-package logcolocalization;
+package bss;
 
 import ij.IJ;
 import ij.ImagePlus;
@@ -24,7 +24,7 @@ public class RestoreCFGMapping implements PlugIn
 		}
 		
 		CFGParameters.applyHistParameters(imp, cfgParams);
-		IJ.log( "LogColocalization v." + GlobalParameters.sVersion + ". Loaded image cytofluorogram parameters." );
+		IJ.log( "BigScopeScatter v." + GlobalParameters.sVersion + ". Loaded image cytofluorogram parameters." );
 		cfgParams.printParams();
 	}
 }

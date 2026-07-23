@@ -1,4 +1,4 @@
-package logcolocalization;
+package bss;
 
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
@@ -24,7 +24,7 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Cast;
 import net.imglib2.view.Views;
 
-import logcolocalization.io.SpimDataLoader;
+import bss.io.SpimDataLoader;
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;

@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package logcolocalization.io;
+package bss.io;
 
 import java.io.File;
 import java.util.ArrayList;
