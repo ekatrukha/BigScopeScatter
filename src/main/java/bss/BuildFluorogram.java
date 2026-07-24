@@ -29,7 +29,7 @@ import mpicbg.spim.data.generic.sequence.BasicImgLoader;
 public class BuildFluorogram < T extends RealType< T > & NativeType< T > > implements PlugIn
 {
 
-	final FGParameters cfgParams = new FGParameters();
+	final FGParameters fgParams = new FGParameters();
 	
 	int nChannels;
 	
@@ -41,7 +41,7 @@ public class BuildFluorogram < T extends RealType< T > & NativeType< T > > imple
 		if(sFilenameINI == null)
 			return;
 		
-		final AbstractSpimData< ? > spimData = FGParameters.getDataFromFilename(sFilenameINI, cfgParams);
+		final AbstractSpimData< ? > spimData = FGParameters.getDataFromFilename(sFilenameINI, fgParams);
 		if(spimData == null)
 		{
 			IJ.log( "Error opening: " + sFilenameINI +"\n Not an image file?");
@@ -62,19 +62,20 @@ public class BuildFluorogram < T extends RealType< T > & NativeType< T > > imple
 		final BasicImgLoader imgLoader = spimData.getSequenceDescription().getImgLoader();
 		
 		final RandomAccessibleInterval<T> channel1 = 
-				Cast.unchecked(  imgLoader.getSetupImgLoader(cfgParams.nChannel1).getImage(0));
+				Cast.unchecked(  imgLoader.getSetupImgLoader(fgParams.nChannel1).getImage(0));
 		final RandomAccessibleInterval<T> channel2 = 
-				Cast.unchecked(  imgLoader.getSetupImgLoader(cfgParams.nChannel2).getImage(0));
+				Cast.unchecked(  imgLoader.getSetupImgLoader(fgParams.nChannel2).getImage(0));
 		
 		IJ.log("BigScopeScatter v." + BSSsettings.sVersion + ": Building cytofluorogram.");
-		cfgParams.printParams();
+		fgParams.printParams();
 		IJ.log("Calculating, please wait...");
-		final ImagePlus imp = getFluorogram(channel1, channel2, cfgParams  );
+		final ImagePlus imp = getFluorogram(channel1, channel2, fgParams  );
 		
-		imp.setTitle( "scatter_" + cfgParams.getChannelsConfiguration() + "_" + cfgParams.sDataFilename);
-		cfgParams.saveToImagePlus( imp );
+		imp.setTitle( "scatter_" + fgParams.getChannelsConfiguration() + "_" 
+						+ fgParams.getFilenameNoExtension());
+		fgParams.saveToImagePlus( imp );
 		imp.show();
-		FGParameters.applyHistParameters(imp, cfgParams);
+		FGParameters.applyHistParameters(imp, fgParams);
 		IJ.run(imp, "Enhance Contrast", "saturated=0.35");
 		IJ.log("done");
 	}
@@ -152,43 +153,43 @@ public class BuildFluorogram < T extends RealType< T > & NativeType< T > > imple
 		
 		if ( gdHist.wasCanceled() )
 			return false;
-		cfgParams.nChannel1 = gdHist.getNextChoiceIndex();
-		cfgParams.nChannel2 = gdHist.getNextChoiceIndex();
-		if(cfgParams.nChannel1  == cfgParams.nChannel2)
+		fgParams.nChannel1 = gdHist.getNextChoiceIndex();
+		fgParams.nChannel2 = gdHist.getNextChoiceIndex();
+		if(fgParams.nChannel1  == fgParams.nChannel2)
 		{
 			IJ.log("Warning! Channel X axis is equal to Channel Y!");
 		}
 		
-		cfgParams.bFlipY = gdHist.getNextBoolean();
-		BSSsettings.bInvertY = cfgParams.bFlipY;
-		Prefs.set("BSS.bInvertY", cfgParams.bFlipY);
+		fgParams.bFlipY = gdHist.getNextBoolean();
+		BSSsettings.bInvertY = fgParams.bFlipY;
+		Prefs.set("BSS.bInvertY", fgParams.bFlipY);
 		
-		cfgParams.nMapFunction = gdHist.getNextChoiceIndex();		
-		BSSsettings.nMapFunction = cfgParams.nMapFunction;
-		Prefs.set("BSS.nMapFunction", cfgParams.nMapFunction);
+		fgParams.nMapFunction = gdHist.getNextChoiceIndex();		
+		BSSsettings.nMapFunction = fgParams.nMapFunction;
+		Prefs.set("BSS.nMapFunction", fgParams.nMapFunction);
 		
-		cfgParams.nBinsX = (int)gdHist.getNextNumber();
-		BSSsettings.nBinsX = cfgParams.nBinsX;
-		Prefs.set("BSS.nBinsX", cfgParams.nBinsX);
+		fgParams.nBinsX = (int)gdHist.getNextNumber();
+		BSSsettings.nBinsX = fgParams.nBinsX;
+		Prefs.set("BSS.nBinsX", fgParams.nBinsX);
 		
-		cfgParams.nBinsY = (int)gdHist.getNextNumber();
-		BSSsettings.nBinsY = cfgParams.nBinsY;
-		Prefs.set("BSS.nBinsY", cfgParams.nBinsY);
+		fgParams.nBinsY = (int)gdHist.getNextNumber();
+		BSSsettings.nBinsY = fgParams.nBinsY;
+		Prefs.set("BSS.nBinsY", fgParams.nBinsY);
 		
-		cfgParams.minmax1[0] = gdHist.getNextNumber();
-		BSSsettings.dMinX = cfgParams.minmax1[0];
+		fgParams.minmax1[0] = gdHist.getNextNumber();
+		BSSsettings.dMinX = fgParams.minmax1[0];
 		Prefs.set("BSS.dMinX", BSSsettings.dMinX);
 		
-		cfgParams.minmax1[1] = gdHist.getNextNumber();
-		BSSsettings.dMaxX = cfgParams.minmax1[1];
+		fgParams.minmax1[1] = gdHist.getNextNumber();
+		BSSsettings.dMaxX = fgParams.minmax1[1];
 		Prefs.set("BSS.dMaxX", BSSsettings.dMaxX);
 		
-		cfgParams.minmax2[0] = gdHist.getNextNumber();
-		BSSsettings.dMinY = cfgParams.minmax2[0];
+		fgParams.minmax2[0] = gdHist.getNextNumber();
+		BSSsettings.dMinY = fgParams.minmax2[0];
 		Prefs.set("BSS.dMinY", BSSsettings.dMinY);
 		
-		cfgParams.minmax2[1] = gdHist.getNextNumber();
-		BSSsettings.dMaxY = cfgParams.minmax2[1];
+		fgParams.minmax2[1] = gdHist.getNextNumber();
+		BSSsettings.dMaxY = fgParams.minmax2[1];
 		Prefs.set("BSS.dMaxY", BSSsettings.dMaxY);
 		
 		return true;

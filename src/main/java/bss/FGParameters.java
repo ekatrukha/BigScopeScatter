@@ -28,10 +28,6 @@ public class FGParameters
 	public final double [] minmax1 = new double [2];
 	public final double [] minmax2 = new double [2];
 	
-	public String getFullDataPathFilename()
-	{
-		return sDataPath + File.separator + sDataFilename;
-	}
 	
 	public DoubleUnaryOperator getMapFunction()
 	{
@@ -268,5 +264,26 @@ public class FGParameters
 		if(bFlipY)
 			return out + "i)";
 		return out + ")";
+	}
+	
+	public String getFilenameNoExtension() 
+	{
+	    if (sDataFilename == null || sDataFilename.isEmpty()) {
+	        return sDataFilename;
+	    }
+	    
+	    int lastDotIndex = sDataFilename.lastIndexOf('.');
+	    
+	    // Handle cases where there is no dot, or the file is hidden (e.g., ".gitignore")
+	    if (lastDotIndex <= 0) {
+	        return sDataFilename; 
+	    }
+	    
+	    return sDataFilename.substring(0, lastDotIndex);
+	}
+	
+	public String getFullDataPathFilename()
+	{
+		return sDataPath + File.separator + sDataFilename;
 	}
 }

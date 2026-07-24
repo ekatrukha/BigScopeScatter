@@ -34,7 +34,7 @@ import mpicbg.spim.data.generic.sequence.BasicImgLoader;
 public class ExtractROIs < T extends RealType< T > & NativeType< T > > implements PlugIn
 {
 	/**cytofluorogram parameters **/
-	final FGParameters cfgParams = new FGParameters();	
+	final FGParameters fgParams = new FGParameters();	
 	
 	/** ROI manager instance **/
 	RoiManager rm;
@@ -46,8 +46,8 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 	@Override
 	public void run( String arg )
 	{
-		ImagePlus impCFG = IJ.getImage();		
-		if (impCFG == null)
+		ImagePlus impFG = IJ.getImage();		
+		if (impFG == null)
 		{
 		    IJ.noImage();
 		    return;
@@ -68,35 +68,35 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 			return;
 		
 		IJ.log( "BigScopeScatter v." + BSSsettings.sVersion + " reading parameters from current image." );
-		if(!cfgParams.loadFromImagePlus( impCFG ))
+		if(!fgParams.loadFromImagePlus( impFG ))
 		{
 			return;
 		}
 		IJ.log( "Parameters loaded, see values below." );
-		cfgParams.printParams();
-		FGParameters.applyHistParameters(impCFG, cfgParams);
+		fgParams.printParams();
+		FGParameters.applyHistParameters(impFG, fgParams);
 		
 		//try to read the data
-		AbstractSpimData< ? > spimData = FGParameters.getDataFromFilename(cfgParams.getFullDataPathFilename(), cfgParams);
+		AbstractSpimData< ? > spimData = FGParameters.getDataFromFilename(fgParams.getFullDataPathFilename(), fgParams);
 		//no data, let's ask user for something else in case it was moved
 		if(spimData == null)
 		{
-			if(!IJ.showMessageWithCancel( "Data file is missing", "Cannot find associated data file " + cfgParams.sDataFilename +
-				"\n at " + cfgParams.sDataPath + "\n It was moved? Do you want to open it in from the new location?"	 ))
+			if(!IJ.showMessageWithCancel( "Data file is missing", "Cannot find associated data file " + fgParams.sDataFilename +
+				"\n at " + fgParams.sDataPath + "\n It was moved? Do you want to open it in from the new location?"	 ))
 			{
 				return;
 			}
 			String sFilenameINI = BuildFluorogram.openFilenameDialog();
 			if(sFilenameINI == null)
 				return;	
-			spimData = FGParameters.getDataFromFilename(sFilenameINI, cfgParams);
+			spimData = FGParameters.getDataFromFilename(sFilenameINI, fgParams);
 			if(spimData == null)
 			{
-				IJ.error("Error loading", "Error loading " + cfgParams.getFullDataPathFilename() + ". \nNot an image file?");
+				IJ.error("Error loading", "Error loading " + fgParams.getFullDataPathFilename() + ". \nNot an image file?");
 				
 				return;
 			}
-			IJ.log( "Loaded the data from " + cfgParams.getFullDataPathFilename());
+			IJ.log( "Loaded the data from " + fgParams.getFullDataPathFilename());
 		}
 		
 		//ask for the output
@@ -111,7 +111,7 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 			IJ.log( "You need image with at least 2 channels as input");
 			return;
 		}
-		if(cfgParams.nChannel1 > nChannels || cfgParams.nChannel2 > nChannels)
+		if(fgParams.nChannel1 > nChannels || fgParams.nChannel2 > nChannels)
 		{
 			IJ.log( "Loaded image does not have channels from stored cytofluorogram!");
 			return;
@@ -121,9 +121,9 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 		final BasicImgLoader imgLoader = spimData.getSequenceDescription().getImgLoader();
 		
 		final RandomAccessibleInterval<T> channel1 = 
-				Cast.unchecked(  imgLoader.getSetupImgLoader(cfgParams.nChannel1).getImage(0));
+				Cast.unchecked(  imgLoader.getSetupImgLoader(fgParams.nChannel1).getImage(0));
 		final RandomAccessibleInterval<T> channel2 = 
-				Cast.unchecked(  imgLoader.getSetupImgLoader(cfgParams.nChannel2).getImage(0));
+				Cast.unchecked(  imgLoader.getSetupImgLoader(fgParams.nChannel2).getImage(0));
 		double [] voxDims = spimData.getSequenceDescription().getViewSetupsOrdered().get( 0 ).getVoxelSize().dimensionsAsDoubleArray();
 		String sUnit = spimData.getSequenceDescription().getViewSetupsOrdered().get( 0 ).getVoxelSize().unit();
 		final Calibration cal = new Calibration ();
@@ -135,7 +135,7 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 		for (final Roi roi:rois)
 		{
 			IJ.showStatus( "Processing ROI " + roi.getName() );
-			ImagePlus extractedImp = getFilteredPairFromROIMap(roi, channel1, channel2, cfgParams);
+			ImagePlus extractedImp = getFilteredPairFromROIMap(roi, channel1, channel2, fgParams);
 			CompositeImage impROI = new CompositeImage(extractedImp);
 			impROI.setMode( IJ.COMPOSITE );
 			impROI.setCalibration( cal );
@@ -164,16 +164,16 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 	
 	public static < T extends RealType< T > & NativeType< T > > ImagePlus 
 	getFilteredPairFromROIMap(final Roi roi, final RandomAccessibleInterval<T> channel1, 
-			final RandomAccessibleInterval<T> channel2, final FGParameters cfgP)
+			final RandomAccessibleInterval<T> channel2, final FGParameters fgP)
 	{
-		final DoubleUnaryOperator f = cfgP.getMapFunction();
-		double min1 = f.applyAsDouble( cfgP.minmax1[0] );
-		double max1 = f.applyAsDouble( cfgP.minmax1[1] );
-		double min2 = f.applyAsDouble( cfgP.minmax2[0] );
-		double max2 = f.applyAsDouble( cfgP.minmax2[1] );		
+		final DoubleUnaryOperator f = fgP.getMapFunction();
+		double min1 = f.applyAsDouble( fgP.minmax1[0] );
+		double max1 = f.applyAsDouble( fgP.minmax1[1] );
+		double min2 = f.applyAsDouble( fgP.minmax2[0] );
+		double max2 = f.applyAsDouble( fgP.minmax2[1] );		
 
-		Real1dBinMapper<FloatType> mapper1 = new Real1dBinMapper<>(min1, max1, cfgP.nBinsX, false);
-		Real1dBinMapper<FloatType> mapper2 = new Real1dBinMapper<>(min2, max2, cfgP.nBinsY, false);
+		Real1dBinMapper<FloatType> mapper1 = new Real1dBinMapper<>(min1, max1, fgP.nBinsX, false);
+		Real1dBinMapper<FloatType> mapper2 = new Real1dBinMapper<>(min2, max2, fgP.nBinsY, false);
 
 		long[] dimsSingle = channel1.dimensionsAsLongArray();
 		long [] dims = new long [dimsSingle.length + 1];
@@ -205,11 +205,11 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 					{
 						long x = mapper1.map( new FloatType((float)f.applyAsDouble( c1.getRealDouble())));
 						long y = mapper2.map( new FloatType((float)f.applyAsDouble( c2.getRealDouble())));
-						if(x >= 0 && x < cfgP.nBinsX && y >= 0 && y < cfgP.nBinsY)
+						if(x >= 0 && x < fgP.nBinsX && y >= 0 && y < fgP.nBinsY)
 						{
-							if(cfgP.bFlipY)
+							if(fgP.bFlipY)
 							{
-								y = cfgP.nBinsY - y - 1;
+								y = fgP.nBinsY - y - 1;
 							}
 							if(roi.contains( (int)x, (int)y ))
 							{
