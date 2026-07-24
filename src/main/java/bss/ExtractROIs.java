@@ -34,7 +34,7 @@ import mpicbg.spim.data.generic.sequence.BasicImgLoader;
 public class ExtractROIs < T extends RealType< T > & NativeType< T > > implements PlugIn
 {
 	/**cytofluorogram parameters **/
-	final CFGParameters cfgParams = new CFGParameters();	
+	final FGParameters cfgParams = new FGParameters();	
 	
 	/** ROI manager instance **/
 	RoiManager rm;
@@ -67,17 +67,17 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 		if(!verifyROIs())
 			return;
 		
-		IJ.log( "BigScopeScatter v." + GlobalParameters.sVersion + " reading parameters from current image." );
+		IJ.log( "BigScopeScatter v." + BSSsettings.sVersion + " reading parameters from current image." );
 		if(!cfgParams.loadFromImagePlus( impCFG ))
 		{
 			return;
 		}
 		IJ.log( "Parameters loaded, see values below." );
 		cfgParams.printParams();
-		CFGParameters.applyHistParameters(impCFG, cfgParams);
+		FGParameters.applyHistParameters(impCFG, cfgParams);
 		
 		//try to read the data
-		AbstractSpimData< ? > spimData = CFGParameters.getDataFromFilename(cfgParams.getFullDataPathFilename(), cfgParams);
+		AbstractSpimData< ? > spimData = FGParameters.getDataFromFilename(cfgParams.getFullDataPathFilename(), cfgParams);
 		//no data, let's ask user for something else in case it was moved
 		if(spimData == null)
 		{
@@ -86,10 +86,10 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 			{
 				return;
 			}
-			String sFilenameINI = BuildCytoFluorogram.openFilenameDialog();
+			String sFilenameINI = BuildFluorogram.openFilenameDialog();
 			if(sFilenameINI == null)
 				return;	
-			spimData = CFGParameters.getDataFromFilename(sFilenameINI, cfgParams);
+			spimData = FGParameters.getDataFromFilename(sFilenameINI, cfgParams);
 			if(spimData == null)
 			{
 				IJ.error("Error loading", "Error loading " + cfgParams.getFullDataPathFilename() + ". \nNot an image file?");
@@ -144,13 +144,13 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 			IJ.run(impROI, "Enhance Contrast", "saturated=0.35");
 			impROI.setC( 1 );
 			IJ.run(impROI, "Enhance Contrast", "saturated=0.35");
-			switch (GlobalParameters.nOutputMode)
+			switch (BSSsettings.nOutputMode)
 			{
-			case GlobalParameters.BSS_ImageJ:
+			case BSSsettings.BSS_ImageJ:
 				impROI.show();
 
 				break;
-			case GlobalParameters.BSS_Tiff:
+			case BSSsettings.BSS_Tiff:
 				IJ.saveAs(impROI, "Tiff", nOutputPath + roi.getName() + ".tif");
 				break;
 			}
@@ -164,7 +164,7 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 	
 	public static < T extends RealType< T > & NativeType< T > > ImagePlus 
 	getFilteredPairFromROIMap(final Roi roi, final RandomAccessibleInterval<T> channel1, 
-			final RandomAccessibleInterval<T> channel2, final CFGParameters cfgP)
+			final RandomAccessibleInterval<T> channel2, final FGParameters cfgP)
 	{
 		final DoubleUnaryOperator f = cfgP.getMapFunction();
 		double min1 = f.applyAsDouble( cfgP.minmax1[0] );
@@ -255,17 +255,17 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 	{
 		final GenericDialog gdOutput = new GenericDialog( "Output parameters" );
 		final String [] sOutput = new String[] {"show in Fiji", "Save as TIFFs"};
-		gdOutput.addChoice( "Extract to:", sOutput , sOutput [ GlobalParameters.nOutputMode ] );
+		gdOutput.addChoice( "Extract to:", sOutput , sOutput [ BSSsettings.nOutputMode ] );
 		gdOutput.showDialog();
 		
 		if ( gdOutput.wasCanceled() )
 			return false;
 		
-		GlobalParameters.nOutputMode = gdOutput.getNextChoiceIndex();
-		Prefs.set( "BSS.nOutputMode", GlobalParameters.nOutputMode );
+		BSSsettings.nOutputMode = gdOutput.getNextChoiceIndex();
+		Prefs.set( "BSS.nOutputMode", BSSsettings.nOutputMode );
 		
 		//ask for the folder
-		if(GlobalParameters.nOutputMode == GlobalParameters.BSS_Tiff)
+		if(BSSsettings.nOutputMode == BSSsettings.BSS_Tiff)
 		{
 			nOutputPath = GetFolderDialog.getSelectedFolder("Save TIFFs to folder..", false);
 			if (nOutputPath == null)
@@ -277,16 +277,16 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 	public static void main(String[] args) throws Exception 
 	{
 		new ImageJ();
-		//ImagePlus image = IJ.openImage("/home/eugene/Desktop/projects/BigScopeScatter/cytofluorogram_1-3.tif");
-		ImagePlus image = IJ.openImage("/home/eugene/Desktop/projects/BigScopeScatter/cytofluorogram_1-3_inverted.tif");
+		//ImagePlus image = IJ.openImage("/home/eugene/Desktop/projects/BigScopeScatter/test_data/cytofluorogram_1-3.tif");
+		ImagePlus image = IJ.openImage("/home/eugene/Desktop/projects/BigScopeScatter/test_data/scatter_(2_1i)_1-3.tif");
 		
 		image.show();
 		RoiManager rMan = RoiManager.getInstance2();
 		if (rMan == null) {
 			rMan = new RoiManager(); // creates a new one if needed
 		}
-		//rMan.open( "/home/eugene/Desktop/projects/BigScopeScatter/RoiSet.zip" );
-		rMan.open( "/home/eugene/Desktop/projects/BigScopeScatter/RoiSet_inverted.zip" );
+		//rMan.open( "/home/eugene/Desktop/projects/BigScopeScatter/test_data/RoiSet.zip" );
+		rMan.open( "/home/eugene/Desktop/projects/BigScopeScatter/test_data/RoiSet_inverted.zip" );
 		
 		ExtractROIs<?> test = new ExtractROIs<>();
 		test.run( null);

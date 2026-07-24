@@ -26,10 +26,10 @@ import ij.plugin.PlugIn;
 import mpicbg.spim.data.generic.AbstractSpimData;
 import mpicbg.spim.data.generic.sequence.BasicImgLoader;
 
-public class BuildCytoFluorogram < T extends RealType< T > & NativeType< T > > implements PlugIn
+public class BuildFluorogram < T extends RealType< T > & NativeType< T > > implements PlugIn
 {
 
-	final CFGParameters cfgParams = new CFGParameters();
+	final FGParameters cfgParams = new FGParameters();
 	
 	int nChannels;
 	
@@ -41,7 +41,7 @@ public class BuildCytoFluorogram < T extends RealType< T > & NativeType< T > > i
 		if(sFilenameINI == null)
 			return;
 		
-		final AbstractSpimData< ? > spimData = CFGParameters.getDataFromFilename(sFilenameINI, cfgParams);
+		final AbstractSpimData< ? > spimData = FGParameters.getDataFromFilename(sFilenameINI, cfgParams);
 		if(spimData == null)
 		{
 			IJ.log( "Error opening: " + sFilenameINI +"\n Not an image file?");
@@ -66,23 +66,23 @@ public class BuildCytoFluorogram < T extends RealType< T > & NativeType< T > > i
 		final RandomAccessibleInterval<T> channel2 = 
 				Cast.unchecked(  imgLoader.getSetupImgLoader(cfgParams.nChannel2).getImage(0));
 		
-		IJ.log("BigScopeScatter v." + GlobalParameters.sVersion + ": Building cytofluorogram.");
+		IJ.log("BigScopeScatter v." + BSSsettings.sVersion + ": Building cytofluorogram.");
 		cfgParams.printParams();
 		IJ.log("Calculating, please wait...");
-		final ImagePlus imp = getHistogram(channel1, channel2, cfgParams  );
+		final ImagePlus imp = getFluorogram(channel1, channel2, cfgParams  );
 		
-		imp.setTitle( "cytofluorogram_" + cfgParams.sDataFilename);
+		imp.setTitle( "scatter_" + cfgParams.getChannelsConfiguration() + "_" + cfgParams.sDataFilename);
 		cfgParams.saveToImagePlus( imp );
 		imp.show();
-		CFGParameters.applyHistParameters(imp, cfgParams);
+		FGParameters.applyHistParameters(imp, cfgParams);
 		IJ.run(imp, "Enhance Contrast", "saturated=0.35");
 		IJ.log("done");
 	}
 	
-	public static < T extends RealType< T > & NativeType< T > > ImagePlus getHistogram(
+	public static < T extends RealType< T > & NativeType< T > > ImagePlus getFluorogram(
 			final RandomAccessibleInterval<T> channel1, 
 			final RandomAccessibleInterval<T> channel2, 
-			final CFGParameters histParams)
+			final FGParameters histParams)
 	{	
 		final DoubleUnaryOperator f = histParams.getMapFunction();
 		final double min1 = f.applyAsDouble( histParams.minmax1[0] );
@@ -133,21 +133,21 @@ public class BuildCytoFluorogram < T extends RealType< T > & NativeType< T > > i
 		final String [] sMapping = new String[] {"Linear", "Log"};
 		gdHist.addChoice( "For X-axis use ", sChannels, sChannels[ 0 ] );
 		gdHist.addChoice( "For Y-axis use ", sChannels, sChannels[ 1 ] );
-		gdHist.addCheckbox( "Invert Y-axis ", GlobalParameters.bInvertY );
-		gdHist.addChoice( "Axis mapping ", sMapping, sMapping[GlobalParameters.nMapFunction] );
+		gdHist.addCheckbox( "Invert Y-axis ", BSSsettings.bInvertY );
+		gdHist.addChoice( "Axis mapping ", sMapping, sMapping[BSSsettings.nMapFunction] );
 		
-		gdHist.addNumericField( "Bins number X ", GlobalParameters.nBinsX, 0);
-		gdHist.addNumericField( "Bins number Y ", GlobalParameters.nBinsY, 0);
+		gdHist.addNumericField( "Bins number X ", BSSsettings.nBinsX, 0);
+		gdHist.addNumericField( "Bins number Y ", BSSsettings.nBinsY, 0);
 
 		gdHist.addMessage( "Intensity ranges" );
 		gdHist.addMessage( "Intensity range X ch " );
-		gdHist.addNumericField("MinX ", GlobalParameters.dMinX);
+		gdHist.addNumericField("MinX ", BSSsettings.dMinX);
 		gdHist.addToSameRow();
-		gdHist.addNumericField("MaxX ", GlobalParameters.dMaxX);
+		gdHist.addNumericField("MaxX ", BSSsettings.dMaxX);
 		gdHist.addMessage( "Intensity range Y ch" );
-		gdHist.addNumericField("MinY ", GlobalParameters.dMinY);
+		gdHist.addNumericField("MinY ", BSSsettings.dMinY);
 		gdHist.addToSameRow();
-		gdHist.addNumericField("MaxY ", GlobalParameters.dMaxY);
+		gdHist.addNumericField("MaxY ", BSSsettings.dMaxY);
 		gdHist.showDialog();
 		
 		if ( gdHist.wasCanceled() )
@@ -160,36 +160,36 @@ public class BuildCytoFluorogram < T extends RealType< T > & NativeType< T > > i
 		}
 		
 		cfgParams.bFlipY = gdHist.getNextBoolean();
-		GlobalParameters.bInvertY = cfgParams.bFlipY;
+		BSSsettings.bInvertY = cfgParams.bFlipY;
 		Prefs.set("BSS.bInvertY", cfgParams.bFlipY);
 		
 		cfgParams.nMapFunction = gdHist.getNextChoiceIndex();		
-		GlobalParameters.nMapFunction = cfgParams.nMapFunction;
+		BSSsettings.nMapFunction = cfgParams.nMapFunction;
 		Prefs.set("BSS.nMapFunction", cfgParams.nMapFunction);
 		
 		cfgParams.nBinsX = (int)gdHist.getNextNumber();
-		GlobalParameters.nBinsX = cfgParams.nBinsX;
+		BSSsettings.nBinsX = cfgParams.nBinsX;
 		Prefs.set("BSS.nBinsX", cfgParams.nBinsX);
 		
 		cfgParams.nBinsY = (int)gdHist.getNextNumber();
-		GlobalParameters.nBinsY = cfgParams.nBinsY;
+		BSSsettings.nBinsY = cfgParams.nBinsY;
 		Prefs.set("BSS.nBinsY", cfgParams.nBinsY);
 		
 		cfgParams.minmax1[0] = gdHist.getNextNumber();
-		GlobalParameters.dMinX = cfgParams.minmax1[0];
-		Prefs.set("BSS.dMinX", GlobalParameters.dMinX);
+		BSSsettings.dMinX = cfgParams.minmax1[0];
+		Prefs.set("BSS.dMinX", BSSsettings.dMinX);
 		
 		cfgParams.minmax1[1] = gdHist.getNextNumber();
-		GlobalParameters.dMaxX = cfgParams.minmax1[1];
-		Prefs.set("BSS.dMaxX", GlobalParameters.dMaxX);
+		BSSsettings.dMaxX = cfgParams.minmax1[1];
+		Prefs.set("BSS.dMaxX", BSSsettings.dMaxX);
 		
 		cfgParams.minmax2[0] = gdHist.getNextNumber();
-		GlobalParameters.dMinY = cfgParams.minmax2[0];
-		Prefs.set("BSS.dMinY", GlobalParameters.dMinY);
+		BSSsettings.dMinY = cfgParams.minmax2[0];
+		Prefs.set("BSS.dMinY", BSSsettings.dMinY);
 		
 		cfgParams.minmax2[1] = gdHist.getNextNumber();
-		GlobalParameters.dMaxY = cfgParams.minmax2[1];
-		Prefs.set("BSS.dMaxY", GlobalParameters.dMaxY);
+		BSSsettings.dMaxY = cfgParams.minmax2[1];
+		Prefs.set("BSS.dMaxY", BSSsettings.dMaxY);
 		
 		return true;
 	}
@@ -197,7 +197,7 @@ public class BuildCytoFluorogram < T extends RealType< T > & NativeType< T > > i
 	public static String openFilenameDialog()
 	{
 		
-		JFileChooser chooser = new JFileChooser(GlobalParameters.lastDir );
+		JFileChooser chooser = new JFileChooser(BSSsettings.lastDir );
 		chooser.setDialogTitle( "Open BioFormats or XML/HDF5 files" );
 
 		int returnVal = chooser.showOpenDialog(null);
@@ -205,7 +205,7 @@ public class BuildCytoFluorogram < T extends RealType< T > & NativeType< T > > i
 		if(returnVal == JFileChooser.APPROVE_OPTION) 
 		{
 			String sFolder = chooser.getSelectedFile().getParent();
-			GlobalParameters.lastDir = sFolder;
+			BSSsettings.lastDir = sFolder;
 			Prefs.set( "BSS.lastDir", sFolder );
 			return chooser.getSelectedFile().getPath();
 		}
@@ -215,7 +215,7 @@ public class BuildCytoFluorogram < T extends RealType< T > & NativeType< T > > i
 	public static void main(String[] args) throws Exception 
 	{
 		new ImageJ();
-		BuildCytoFluorogram<?> test = new BuildCytoFluorogram<>();
+		BuildFluorogram<?> test = new BuildFluorogram<>();
 		test.run( null);
 	}
 }

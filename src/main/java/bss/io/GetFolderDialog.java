@@ -32,7 +32,7 @@ import java.io.File;
 
 import javax.swing.JFileChooser;
 
-import bss.GlobalParameters;
+import bss.BSSsettings;
 import ij.Prefs;
 
 public class GetFolderDialog
@@ -44,7 +44,7 @@ public class GetFolderDialog
 		
 		fc.setDialogTitle( sTitle );
 		fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-		fc.setCurrentDirectory( new File(GlobalParameters.lastDir) );
+		fc.setCurrentDirectory( new File(BSSsettings.lastDir) );
 		fc.setApproveButtonText( "Open" );
 		
 		int returnVal;
@@ -60,8 +60,8 @@ public class GetFolderDialog
 		if(returnVal == JFileChooser.APPROVE_OPTION) 
 		{
 		    File saveFolder = fc.getSelectedFile();
-		    GlobalParameters.lastDir = saveFolder.getAbsolutePath();
-		    Prefs.set( "BVB.lastDir", GlobalParameters.lastDir );
+		    BSSsettings.lastDir = saveFolder.getAbsolutePath();
+		    Prefs.set( "BVB.lastDir", BSSsettings.lastDir );
 		    return saveFolder.getAbsolutePath() + File.separator;
 		}
 		return null;
