@@ -14,7 +14,7 @@
 	<version>0.0.1-SNAPSHOT</version>
 
 	<name>BigScopeScatter</name>                                                   
-	<description> A plugin to build and analyze log scaled cytofluorograms </description> 
+	<description> A plugin to build and analyze cytofluorograms for large images with log and linear scaling </description> 
 	<url>https://github.com/ekatrukha/BigScopeScatter</url>                       
 	<inceptionYear>2026</inceptionYear>                                           
 	<organization>
@@ -145,6 +145,11 @@
 		<dependency>
 			<groupId>net.imglib2</groupId>
 			<artifactId>imglib2-ij</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>nl.uu.science.cellbiology</groupId>
+			<artifactId>AveragingND</artifactId>
+			<version>0.1.0</version>
 		</dependency>
 	</dependencies>
 	<repositories>		

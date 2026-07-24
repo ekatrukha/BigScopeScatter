@@ -17,10 +17,13 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Cast;
 import net.imglib2.view.Views;
 
+import bss.io.GetFolderDialog;
 import ij.CompositeImage;
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
+import ij.Prefs;
+import ij.gui.GenericDialog;
 import ij.gui.Roi;
 import ij.measure.Calibration;
 import ij.plugin.PlugIn;
@@ -31,18 +34,20 @@ import mpicbg.spim.data.generic.sequence.BasicImgLoader;
 public class ExtractROIs < T extends RealType< T > & NativeType< T > > implements PlugIn
 {
 	/**cytofluorogram parameters **/
-	final CFGParameters cfgParams = new CFGParameters();
+	final CFGParameters cfgParams = new CFGParameters();	
 	
 	/** ROI manager instance **/
 	RoiManager rm;
 	
 	ArrayList<Roi> rois = new ArrayList<>();
 	
+	String nOutputPath = "";
+	
 	@Override
 	public void run( String arg )
 	{
-		ImagePlus imp = IJ.getImage();		
-		if (imp == null)
+		ImagePlus impCFG = IJ.getImage();		
+		if (impCFG == null)
 		{
 		    IJ.noImage();
 		    return;
@@ -63,13 +68,13 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 			return;
 		
 		IJ.log( "BigScopeScatter v." + GlobalParameters.sVersion + " reading parameters from current image." );
-		if(!cfgParams.loadFromImagePlus( imp ))
+		if(!cfgParams.loadFromImagePlus( impCFG ))
 		{
 			return;
 		}
 		IJ.log( "Parameters loaded, see values below." );
 		cfgParams.printParams();
-		CFGParameters.applyHistParameters(imp, cfgParams);
+		CFGParameters.applyHistParameters(impCFG, cfgParams);
 		
 		//try to read the data
 		AbstractSpimData< ? > spimData = CFGParameters.getDataFromFilename(cfgParams.getFullDataPathFilename(), cfgParams);
@@ -81,7 +86,7 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 			{
 				return;
 			}
-			String sFilenameINI = BuildCytoFluo.openFilenameDialog();
+			String sFilenameINI = BuildCytoFluorogram.openFilenameDialog();
 			if(sFilenameINI == null)
 				return;	
 			spimData = CFGParameters.getDataFromFilename(sFilenameINI, cfgParams);
@@ -93,6 +98,11 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 			}
 			IJ.log( "Loaded the data from " + cfgParams.getFullDataPathFilename());
 		}
+		
+		//ask for the output
+		if(!outputSelectionDialog())
+			return;
+		
 		//ok, assume spimData not a null now
 		int nChannels = spimData.getSequenceDescription().getViewSetupsOrdered().size();
 		
@@ -121,21 +131,35 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 		cal.pixelHeight = voxDims[1];
 		cal.pixelDepth  = voxDims[2];
 		cal.setUnit( sUnit );
+		
 		for (final Roi roi:rois)
 		{
+			IJ.showStatus( "Processing ROI " + roi.getName() );
 			ImagePlus extractedImp = getFilteredPairFromROIMap(roi, channel1, channel2, cfgParams);
-			CompositeImage cExtracted = new CompositeImage(extractedImp);
-			cExtracted.setMode( IJ.COMPOSITE );
-			cExtracted.setCalibration( cal );
-			cExtracted.setTitle( roi.getName() );			
-			cExtracted.setC( 2 );
-			IJ.run(imp, "Enhance Contrast", "saturated=0.35");
-			cExtracted.setC( 1 );
-			IJ.run(imp, "Enhance Contrast", "saturated=0.35");
-			cExtracted.show();
-		}
-		//impOut.setCalibration( cal );
+			CompositeImage impROI = new CompositeImage(extractedImp);
+			impROI.setMode( IJ.COMPOSITE );
+			impROI.setCalibration( cal );
+			impROI.setTitle( roi.getName() );			
+			impROI.setC( 2 );
+			IJ.run(impROI, "Enhance Contrast", "saturated=0.35");
+			impROI.setC( 1 );
+			IJ.run(impROI, "Enhance Contrast", "saturated=0.35");
+			switch (GlobalParameters.nOutputMode)
+			{
+			case GlobalParameters.BSS_ImageJ:
+				impROI.show();
 
+				break;
+			case GlobalParameters.BSS_Tiff:
+				IJ.saveAs(impROI, "Tiff", nOutputPath + roi.getName() + ".tif");
+				break;
+			}
+			IJ.log( "Processed ROI " + roi.getName() );
+		}
+
+		IJ.showStatus( "All ROIs done" );
+		
+		IJ.log( "All ROIs done" );
 	}
 	
 	public static < T extends RealType< T > & NativeType< T > > ImagePlus 
@@ -224,6 +248,29 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 		if(rois.size() == 0)
 			return false;
 		IJ.log( "Found " + rois.size() + " area ROIs.");
+		return true;
+	}
+	
+	boolean outputSelectionDialog()
+	{
+		final GenericDialog gdOutput = new GenericDialog( "Output parameters" );
+		final String [] sOutput = new String[] {"show in Fiji", "Save as TIFFs"};
+		gdOutput.addChoice( "Extract to:", sOutput , sOutput [ GlobalParameters.nOutputMode ] );
+		gdOutput.showDialog();
+		
+		if ( gdOutput.wasCanceled() )
+			return false;
+		
+		GlobalParameters.nOutputMode = gdOutput.getNextChoiceIndex();
+		Prefs.set( "BSS.nOutputMode", GlobalParameters.nOutputMode );
+		
+		//ask for the folder
+		if(GlobalParameters.nOutputMode == GlobalParameters.BSS_Tiff)
+		{
+			nOutputPath = GetFolderDialog.getSelectedFolder("Save TIFFs to folder..", false);
+			if (nOutputPath == null)
+				return false;
+		}
 		return true;
 	}
 	

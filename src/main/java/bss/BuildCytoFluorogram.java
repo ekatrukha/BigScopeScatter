@@ -8,13 +8,13 @@ import javax.swing.JFileChooser;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.converter.Converters;
 import net.imglib2.histogram.BinMapper1d;
-import net.imglib2.histogram.HistogramNd;
 import net.imglib2.histogram.Real1dBinMapper;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Cast;
+import net.imglib2.util.StopWatch;
 import net.imglib2.view.Views;
 
 import ij.IJ;
@@ -26,7 +26,7 @@ import ij.plugin.PlugIn;
 import mpicbg.spim.data.generic.AbstractSpimData;
 import mpicbg.spim.data.generic.sequence.BasicImgLoader;
 
-public class BuildCytoFluo < T extends RealType< T > & NativeType< T > > implements PlugIn
+public class BuildCytoFluorogram < T extends RealType< T > & NativeType< T > > implements PlugIn
 {
 
 	final CFGParameters cfgParams = new CFGParameters();
@@ -96,7 +96,7 @@ public class BuildCytoFluo < T extends RealType< T > & NativeType< T > > impleme
 		final ArrayList<BinMapper1d<FloatType>> mappers = new ArrayList<>();
 		mappers.add (mapper1);
 		mappers.add (mapper2);
-		HistogramNd<FloatType> histogram = new HistogramNd<>(mappers);
+		HistogramNdBSS<FloatType> histogram = new HistogramNdBSS<>(mappers);
 		ArrayList<Iterable<FloatType>> list = new ArrayList<>();
 		RandomAccessibleInterval< FloatType > real1 = 
 				Converters.convert( channel1, (i,o) -> 
@@ -106,8 +106,12 @@ public class BuildCytoFluo < T extends RealType< T > & NativeType< T > > impleme
 				{o.set( (float)f.applyAsDouble( i.getRealDouble()));}, new FloatType() );
 		list.add( real1 );
 		list.add( real2 );
+		histogram.addProgressListener( ( processed, total ) -> 
+		    IJ.showProgress( ( double ) processed / total ) );
+		StopWatch stopwatch;
+		stopwatch = StopWatch.createAndStart();
 		histogram.countData( list );
-
+		System.out.println( "single threaded time: " + stopwatch );
 		RandomAccessibleInterval< FloatType > histFloat = 
 				Converters.convert( histogram, (i,o) -> 
 				o.set(i.getIntegerLong()), new FloatType() );
@@ -211,7 +215,7 @@ public class BuildCytoFluo < T extends RealType< T > & NativeType< T > > impleme
 	public static void main(String[] args) throws Exception 
 	{
 		new ImageJ();
-		BuildCytoFluo<?> test = new BuildCytoFluo<>();
+		BuildCytoFluorogram<?> test = new BuildCytoFluorogram<>();
 		test.run( null);
 	}
 }

@@ -30,12 +30,12 @@ public class CFGParameters
 	
 	public String getFullDataPathFilename()
 	{
-		return sDataPath +"/" + sDataFilename;
+		return sDataPath + File.separator + sDataFilename;
 	}
 	
 	public DoubleUnaryOperator getMapFunction()
 	{
-		if ( nMapFunction == BSS_Linear)
+		if ( nMapFunction == BSS_Linear )
 		{
 			return  x -> x;
 		}
@@ -44,7 +44,7 @@ public class CFGParameters
 	
 	public DoubleUnaryOperator getInverseMapFunction()
 	{
-		if ( nMapFunction == BSS_Linear)
+		if ( nMapFunction == BSS_Linear )
 		{
 			return  x -> x;
 		}
@@ -88,8 +88,8 @@ public class CFGParameters
 	    imp.setProp("CFG_sVersion", GlobalParameters.sVersion);
 	    imp.setProp("CFG_sDataPath", sDataPath);
 	    imp.setProp("CFG_sDataFilename", sDataFilename);
-	    imp.setProp("CFG_nChannel1", String.valueOf(nChannel1));
-	    imp.setProp("CFG_nChannel2", String.valueOf(nChannel2));
+	    imp.setProp("CFG_nChannel1", String.valueOf(nChannel1 + 1));
+	    imp.setProp("CFG_nChannel2", String.valueOf(nChannel2 + 1));
 	    imp.setProp("CFG_bFlipY", String.valueOf(bFlipY));
 	    imp.setProp("CFG_nMapFunction", String.valueOf(nMapFunction));
 	    imp.setProp("CFG_nBinsX", String.valueOf(nBinsX));
@@ -126,12 +126,12 @@ public class CFGParameters
 			bParseOk = false;
 
 		if ((valD = imp.getNumericProp("CFG_nChannel1")) != Double.NaN) 
-			nChannel1  = (int)valD;
+			nChannel1  = (int)valD - 1;
 		else
 			bParseOk = false;
 
 		if ((valD = imp.getNumericProp("CFG_nChannel2")) != Double.NaN) 
-			nChannel2  = (int)valD;
+			nChannel2  = (int)valD - 1;
 		else
 			bParseOk = false;
 
