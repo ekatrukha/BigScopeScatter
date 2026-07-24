@@ -69,6 +69,7 @@ public class BuildFluorogram < T extends RealType< T > & NativeType< T > > imple
 		IJ.log("BigScopeScatter v." + BSSsettings.sVersion + ": Building 2D histogram.");
 		fgParams.printParams();
 		IJ.log("Calculating, please wait...");
+		IJ.showStatus( "Building 2D histogram for " + fgParams.getFilenameNoExtension() + "...");
 		final ImagePlus imp = getFluorogram(channel1, channel2, fgParams  );
 		
 		imp.setTitle( "scatter_" + fgParams.getChannelsConfigurationString() + "_" 
@@ -78,6 +79,7 @@ public class BuildFluorogram < T extends RealType< T > & NativeType< T > > imple
 		FGParameters.applyHistParameters(imp, fgParams);
 		IJ.run(imp, "Enhance Contrast", "saturated=0.35");
 		IJ.log("done");
+		IJ.showStatus( "Building 2D histogram for " + fgParams.getFilenameNoExtension() + " done.");
 	}
 	
 	public static < T extends RealType< T > & NativeType< T > > ImagePlus getFluorogram(

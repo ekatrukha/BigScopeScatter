@@ -214,6 +214,8 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 					long y = mapper2.map( new FloatType((float)f.applyAsDouble( c2.getRealDouble())));
 					if(x >= 0 && x < fgP.nBinsX && y >= 0 && y < fgP.nBinsY)
 					{
+						
+						///VERIFY THIS!!!!
 						if(fgP.bFlipY)
 						{
 							y = fgP.nBinsY - y - 1;
