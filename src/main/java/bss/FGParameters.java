@@ -226,15 +226,14 @@ public class FGParameters
     	final double binWy = (max2 - min2) / histParams.nBinsY;	
 		final ImageCanvas canvas = imp.getCanvas();
 		final ImageProcessor ip = imp.getProcessor();
-		String prefixX = "IntX";
-		String prefixY = "IntY";
+		String prefixX = "IntX_" + "ch" +  Integer.toString( histParams.nChannel1 + 1);
+		String prefixY = "IntY_" + "ch" +  Integer.toString( histParams.nChannel2 + 1);
+
 		if(histParams.bHasAxesNames)
 		{
 			prefixX = prefixX + "[" + histParams.sChannelX + "]";
 			prefixY = prefixY + "[" + histParams.sChannelY + "]";
 		}
-		prefixX = prefixX + "ch" +  Integer.toString( histParams.nChannel1 + 1) + "=";
-		prefixY = prefixY + "ch" +  Integer.toString( histParams.nChannel2 + 1) + "=";
 
 		final String sPrefixX = prefixX;
 		final String sPrefixY = prefixY;
@@ -264,7 +263,7 @@ public class FGParameters
 		        final double myY = finv.applyAsDouble( min2 + (y + 0.5) * binWy);//,10);
 
 		        IJ.showStatus(
-		            String.format("Count %.0f, " +  sPrefixX + "%.2f (%d), "+ sPrefixY + "%.2f (%d)", fCount, myX, x, myY, y)
+		            String.format("Count %.0f, " +  sPrefixX + "=%.2f (%d), "+ sPrefixY + "=%.2f (%d)", fCount, myX, x, myY, y)
 		        );
 		    }
 		});	
