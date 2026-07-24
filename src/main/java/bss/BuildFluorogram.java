@@ -21,7 +21,6 @@ import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
 import ij.Prefs;
-import ij.gui.GenericDialog;
 import ij.plugin.PlugIn;
 import mpicbg.spim.data.generic.AbstractSpimData;
 import mpicbg.spim.data.generic.sequence.BasicImgLoader;
@@ -54,8 +53,9 @@ public class BuildFluorogram < T extends RealType< T > & NativeType< T > > imple
 			IJ.log( "You need image with at least 2 channels as input");
 			return;
 		}
+		FluorogramParamsDialog fgDialog = new FluorogramParamsDialog(fgParams);
 		//show parameters dialog
-		if(!dialogHistParameters())
+		if(!fgDialog.showDialog( nChannels ))
 			return;
 		
 		
@@ -66,12 +66,12 @@ public class BuildFluorogram < T extends RealType< T > & NativeType< T > > imple
 		final RandomAccessibleInterval<T> channel2 = 
 				Cast.unchecked(  imgLoader.getSetupImgLoader(fgParams.nChannel2).getImage(0));
 		
-		IJ.log("BigScopeScatter v." + BSSsettings.sVersion + ": Building cytofluorogram.");
+		IJ.log("BigScopeScatter v." + BSSsettings.sVersion + ": Building 2D histogram.");
 		fgParams.printParams();
 		IJ.log("Calculating, please wait...");
 		final ImagePlus imp = getFluorogram(channel1, channel2, fgParams  );
 		
-		imp.setTitle( "scatter_" + fgParams.getChannelsConfiguration() + "_" 
+		imp.setTitle( "scatter_" + fgParams.getChannelsConfigurationString() + "_" 
 						+ fgParams.getFilenameNoExtension());
 		fgParams.saveToImagePlus( imp );
 		imp.show();
@@ -121,79 +121,6 @@ public class BuildFluorogram < T extends RealType< T > & NativeType< T > > imple
 		return ImageJFunctions.wrapFloat( histFloat, "" );
 	}
 
-	
-	public boolean dialogHistParameters()
-	{
-		final GenericDialog gdHist = new GenericDialog( "Build cytofluorogram" );
-		final String [] sChannels = new String[nChannels];
-		
-		for(int i = 0; i < nChannels; i++)
-		{
-			sChannels[i] = "channel " + Integer.toString( i + 1 );
-		}
-		final String [] sMapping = new String[] {"Linear", "Log"};
-		gdHist.addChoice( "For X-axis use ", sChannels, sChannels[ 0 ] );
-		gdHist.addChoice( "For Y-axis use ", sChannels, sChannels[ 1 ] );
-		gdHist.addCheckbox( "Invert Y-axis ", BSSsettings.bInvertY );
-		gdHist.addChoice( "Axis mapping ", sMapping, sMapping[BSSsettings.nMapFunction] );
-		
-		gdHist.addNumericField( "Bins number X ", BSSsettings.nBinsX, 0);
-		gdHist.addNumericField( "Bins number Y ", BSSsettings.nBinsY, 0);
-
-		gdHist.addMessage( "Intensity ranges" );
-		gdHist.addMessage( "Intensity range X ch " );
-		gdHist.addNumericField("MinX ", BSSsettings.dMinX);
-		gdHist.addToSameRow();
-		gdHist.addNumericField("MaxX ", BSSsettings.dMaxX);
-		gdHist.addMessage( "Intensity range Y ch" );
-		gdHist.addNumericField("MinY ", BSSsettings.dMinY);
-		gdHist.addToSameRow();
-		gdHist.addNumericField("MaxY ", BSSsettings.dMaxY);
-		gdHist.showDialog();
-		
-		if ( gdHist.wasCanceled() )
-			return false;
-		fgParams.nChannel1 = gdHist.getNextChoiceIndex();
-		fgParams.nChannel2 = gdHist.getNextChoiceIndex();
-		if(fgParams.nChannel1  == fgParams.nChannel2)
-		{
-			IJ.log("Warning! Channel X axis is equal to Channel Y!");
-		}
-		
-		fgParams.bFlipY = gdHist.getNextBoolean();
-		BSSsettings.bInvertY = fgParams.bFlipY;
-		Prefs.set("BSS.bInvertY", fgParams.bFlipY);
-		
-		fgParams.nMapFunction = gdHist.getNextChoiceIndex();		
-		BSSsettings.nMapFunction = fgParams.nMapFunction;
-		Prefs.set("BSS.nMapFunction", fgParams.nMapFunction);
-		
-		fgParams.nBinsX = (int)gdHist.getNextNumber();
-		BSSsettings.nBinsX = fgParams.nBinsX;
-		Prefs.set("BSS.nBinsX", fgParams.nBinsX);
-		
-		fgParams.nBinsY = (int)gdHist.getNextNumber();
-		BSSsettings.nBinsY = fgParams.nBinsY;
-		Prefs.set("BSS.nBinsY", fgParams.nBinsY);
-		
-		fgParams.minmax1[0] = gdHist.getNextNumber();
-		BSSsettings.dMinX = fgParams.minmax1[0];
-		Prefs.set("BSS.dMinX", BSSsettings.dMinX);
-		
-		fgParams.minmax1[1] = gdHist.getNextNumber();
-		BSSsettings.dMaxX = fgParams.minmax1[1];
-		Prefs.set("BSS.dMaxX", BSSsettings.dMaxX);
-		
-		fgParams.minmax2[0] = gdHist.getNextNumber();
-		BSSsettings.dMinY = fgParams.minmax2[0];
-		Prefs.set("BSS.dMinY", BSSsettings.dMinY);
-		
-		fgParams.minmax2[1] = gdHist.getNextNumber();
-		BSSsettings.dMaxY = fgParams.minmax2[1];
-		Prefs.set("BSS.dMaxY", BSSsettings.dMaxY);
-		
-		return true;
-	}
 	
 	public static String openFilenameDialog()
 	{

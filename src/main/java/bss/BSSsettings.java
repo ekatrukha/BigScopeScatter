@@ -7,6 +7,9 @@ public class BSSsettings
 	public static String sVersion = "0.0.1";
 	public static String lastDir = Prefs.get( "BSS.lastDir", "" );
 	public static boolean bInvertY = Prefs.get( "BSS.bInvertY", true );
+	public static boolean bHasAxesNames = Prefs.get( "BSS.bHasAxesNames", false );
+	public static String sChannelX = Prefs.get( "BSS.sChannelX", "" );
+	public static String sChannelY = Prefs.get( "BSS.sChannelY", "" );
 	public static int nBinsX = (int)Prefs.get( "BSS.nBinsX", 512);
 	public static int nBinsY = (int)Prefs.get( "BSS.nBinsY", 512);
 	public static int nMapFunction = (int)Prefs.get( "BSS.nMapFunction", FGParameters.BSS_Log);

@@ -21,6 +21,9 @@ public class FGParameters
 	public int nChannel1;
 	public int nChannel2;
 	public boolean bFlipY = false;
+	public boolean bHasAxesNames = false;
+	public String sChannelX = "";
+	public String sChannelY = "";
 	public int nMapFunction = 0;
 	public static final int BSS_Linear = 0, BSS_Log = 1; 
 	public int nBinsX = 512;
@@ -81,19 +84,22 @@ public class FGParameters
 	{
 	    if (imp == null) return;
 	    
-	    imp.setProp("CFG_sVersion", BSSsettings.sVersion);
-	    imp.setProp("CFG_sDataPath", sDataPath);
-	    imp.setProp("CFG_sDataFilename", sDataFilename);
-	    imp.setProp("CFG_nChannel1", String.valueOf(nChannel1 + 1));
-	    imp.setProp("CFG_nChannel2", String.valueOf(nChannel2 + 1));
-	    imp.setProp("CFG_bFlipY", String.valueOf(bFlipY));
-	    imp.setProp("CFG_nMapFunction", String.valueOf(nMapFunction));
-	    imp.setProp("CFG_nBinsX", String.valueOf(nBinsX));
-	    imp.setProp("CFG_nBinsY", String.valueOf(nBinsY));
-	    imp.setProp("CFG_minmax1_0", String.valueOf(minmax1[0]));
-	    imp.setProp("CFG_minmax1_1", String.valueOf(minmax1[1]));
-	    imp.setProp("CFG_minmax2_0", String.valueOf(minmax2[0]));
-	    imp.setProp("CFG_minmax2_1", String.valueOf(minmax2[1]));
+	    imp.setProp("BSS_sVersion", BSSsettings.sVersion);
+	    imp.setProp("BSS_sDataPath", sDataPath);
+	    imp.setProp("BSS_sDataFilename", sDataFilename);
+	    imp.setProp("BSS_nChannel1", String.valueOf(nChannel1 + 1));
+	    imp.setProp("BSS_nChannel2", String.valueOf(nChannel2 + 1));
+	    imp.setProp("BSS_bFlipY", String.valueOf(bFlipY));
+	    imp.setProp("BSS_bHasAxesNames", String.valueOf(bHasAxesNames));
+	    imp.setProp("BSS_sChannelX", sChannelX);
+	    imp.setProp("BSS_sChannelY", sChannelY);
+	    imp.setProp("BSS_nMapFunction", String.valueOf(nMapFunction));
+	    imp.setProp("BSS_nBinsX", String.valueOf(nBinsX));
+	    imp.setProp("BSS_nBinsY", String.valueOf(nBinsY));
+	    imp.setProp("BSS_minmax1_0", String.valueOf(minmax1[0]));
+	    imp.setProp("BSS_minmax1_1", String.valueOf(minmax1[1]));
+	    imp.setProp("BSS_minmax2_0", String.valueOf(minmax2[0]));
+	    imp.setProp("BSS_minmax2_1", String.valueOf(minmax2[1]));
 	}
 
 	/**
@@ -107,66 +113,86 @@ public class FGParameters
 		boolean bParseOk = true;
 		String valS;
 		double valD;
-		if ((valS = imp.getProp("CFG_sVersion")) != null) 
+		if ((valS = imp.getProp("BSS_sVersion")) != null) 
 			sVersion  = valS;
 		else
 			bParseOk = false;
-		if ((valS = imp.getProp("CFG_sDataPath")) != null) 
+		
+		if ((valS = imp.getProp("BSS_sDataPath")) != null) 
 			sDataPath  = valS;
 		else
 			bParseOk = false;	
 
-		if ((valS = imp.getProp("CFG_sDataFilename")) != null) 
+		if ((valS = imp.getProp("BSS_sDataFilename")) != null) 
 			sDataFilename  = valS;
 		else
 			bParseOk = false;
 
-		if ((valD = imp.getNumericProp("CFG_nChannel1")) != Double.NaN) 
+		if ((valD = imp.getNumericProp("BSS_nChannel1")) != Double.NaN) 
 			nChannel1  = (int)valD - 1;
 		else
 			bParseOk = false;
 
-		if ((valD = imp.getNumericProp("CFG_nChannel2")) != Double.NaN) 
+		if ((valD = imp.getNumericProp("BSS_nChannel2")) != Double.NaN) 
 			nChannel2  = (int)valD - 1;
 		else
 			bParseOk = false;
 
-		if ((valS = imp.getProp("CFG_bFlipY")) != null) 
-			bFlipY  = Boolean.parseBoolean( valS);
+		if ((valS = imp.getProp("BSS_bFlipY")) != null) 
+			bFlipY  = Boolean.parseBoolean( valS );
 		else
 			bParseOk = false;
+		
+		if ((valS = imp.getProp("BSS_bHasAxesNames")) != null) 
+			bHasAxesNames  = Boolean.parseBoolean( valS );
+		else
+			bParseOk = false;
+		
+		if(bHasAxesNames)
+		{
+			if ((valS = imp.getProp("BSS_sChannelX")) != null) 
+				sChannelX  = valS;
+			else
+				bParseOk = false;	
+			if ((valS = imp.getProp("BSS_sChannelY")) != null) 
+				sChannelY  = valS;
+			else
+				bParseOk = false;	
 
-		if ((valD = imp.getNumericProp("CFG_nMapFunction")) != Double.NaN) 
+		}
+			
+
+		if ((valD = imp.getNumericProp("BSS_nMapFunction")) != Double.NaN) 
 			nMapFunction  = (int)valD;
 		else
 			bParseOk = false;
 
-		if ((valD = imp.getNumericProp("CFG_nBinsX")) != Double.NaN) 
+		if ((valD = imp.getNumericProp("BSS_nBinsX")) != Double.NaN) 
 			nBinsX  = (int)valD;
 		else
 			bParseOk = false;
 
-		if ((valD = imp.getNumericProp("CFG_nBinsY")) != Double.NaN) 
+		if ((valD = imp.getNumericProp("BSS_nBinsY")) != Double.NaN) 
 			nBinsY  = (int)valD;
 		else
 			bParseOk = false;
 
-		if ((valD = imp.getNumericProp("CFG_minmax1_0")) != Double.NaN) 
+		if ((valD = imp.getNumericProp("BSS_minmax1_0")) != Double.NaN) 
 			minmax1[0]  = valD;
 		else
 			bParseOk = false;
 
-		if ((valD = imp.getNumericProp("CFG_minmax1_1")) != Double.NaN) 
+		if ((valD = imp.getNumericProp("BSS_minmax1_1")) != Double.NaN) 
 			minmax1[1]  = valD;
 		else
 			bParseOk = false;
 
-		if ((valD = imp.getNumericProp("CFG_minmax2_0")) != Double.NaN) 
+		if ((valD = imp.getNumericProp("BSS_minmax2_0")) != Double.NaN) 
 			minmax2[0]  = valD;
 		else
 			bParseOk = false;
 
-		if ((valD = imp.getNumericProp("CFG_minmax2_1")) != Double.NaN) 
+		if ((valD = imp.getNumericProp("BSS_minmax2_1")) != Double.NaN) 
 			minmax2[1]  = valD;
 		else
 			bParseOk = false;
@@ -180,7 +206,7 @@ public class FGParameters
 		if(!sVersion.equals( BSSsettings.sVersion ))
 		{
 			IJ.log( "Warining! The plugin version of cytofluorogram "+sVersion 
-					+ " is not equal to the current " +BSSsettings.sVersion);
+					+ " is not equal to the current " + BSSsettings.sVersion);
 			IJ.log( "It should be fine, in principle, loading parameters anyway." );
 		}
 		return true;
@@ -200,8 +226,20 @@ public class FGParameters
     	final double binWy = (max2 - min2) / histParams.nBinsY;	
 		final ImageCanvas canvas = imp.getCanvas();
 		final ImageProcessor ip = imp.getProcessor();
-		
+		String prefixX = "IntX";
+		String prefixY = "IntY";
+		if(histParams.bHasAxesNames)
+		{
+			prefixX = prefixX + "[" + histParams.sChannelX + "]";
+			prefixY = prefixY + "[" + histParams.sChannelY + "]";
+		}
+		prefixX = prefixX + "ch" +  Integer.toString( histParams.nChannel1 + 1) + "=";
+		prefixY = prefixY + "ch" +  Integer.toString( histParams.nChannel2 + 1) + "=";
+
+		final String sPrefixX = prefixX;
+		final String sPrefixY = prefixY;
 		final int nHeight = ip.getHeight() - 1;
+		
 		canvas.addMouseMotionListener(new MouseMotionAdapter() {
 		    @Override
 		    public void mouseMoved(MouseEvent e) {
@@ -226,7 +264,7 @@ public class FGParameters
 		        final double myY = finv.applyAsDouble( min2 + (y + 0.5) * binWy);//,10);
 
 		        IJ.showStatus(
-		            String.format("Count %.0f, Int1=%.2f (%d), Int2=%.2f (%d)", fCount, myX, x, myY, y)
+		            String.format("Count %.0f, " +  sPrefixX + "%.2f (%d), "+ sPrefixY + "%.2f (%d)", fCount, myX, x, myY, y)
 		        );
 		    }
 		});	
@@ -258,12 +296,21 @@ public class FGParameters
 		return SpimDataLoader.loadBioFormats( cfgParamsFile.getFullDataPathFilename());
 	}
 	
-	String getChannelsConfiguration()
+	String getChannelsConfigurationString()
 	{
-		String out = "(" + Integer.toString( nChannel1 + 1 ) + "_" + Integer.toString( nChannel2 + 1 );
+		
+		String out1 = "X(" + Integer.toString( nChannel1 + 1 ) + ")";
+		String out2 = "Y(" + Integer.toString( nChannel2 + 1 );
 		if(bFlipY)
-			return out + "i)";
-		return out + ")";
+			out2 = out2 + "f";
+		out2 = out2 + ")";
+		if(bHasAxesNames)
+		{
+			out1 = out1 + sChannelX;
+			out2 = out2 + sChannelY;			
+		}
+		
+		return out1 + "_" + out2;
 	}
 	
 	public String getFilenameNoExtension() 

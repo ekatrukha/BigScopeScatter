@@ -11,6 +11,8 @@ import net.imglib2.cache.img.DiskCachedCellImgOptions;
 import net.imglib2.histogram.Real1dBinMapper;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.loops.LoopBuilder;
+import net.imglib2.parallel.TaskExecutor;
+import net.imglib2.parallel.TaskExecutors;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
@@ -195,39 +197,53 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 		AtomicLong globalPixelCount = new AtomicLong(0);
 		
 		final long totalPixels = dimsSingle[0] * dimsSingle[1] * dimsSingle[2];
-		
-		LoopBuilder.setImages( channel1, channel2, 
-				Views.hyperSlice( out, 2, 0 ),Views.hyperSlice( out, 2, 1 )).
-				multiThreaded().forEachChunk( chunk->
+		//half for now
+		int numThreads = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
+
+		// Create a TaskExecutor with the target thread count
+		try (TaskExecutor taskExecutor = TaskExecutors.fixedThreadPool(numThreads)) 
+		{
+			LoopBuilder.setImages( channel1, channel2, 
+					Views.hyperSlice( out, 2, 0 ),Views.hyperSlice( out, 2, 1 )).
+			multiThreaded(taskExecutor).forEachChunk( chunk->
+			{
+				long[] localCount = new long[1];
+				chunk.forEachPixel( (c1, c2, co1, co2) -> 
 				{
-					long[] localCount = new long[1];
-					chunk.forEachPixel( (c1, c2, co1, co2) -> 
+					long x = mapper1.map( new FloatType((float)f.applyAsDouble( c1.getRealDouble())));
+					long y = mapper2.map( new FloatType((float)f.applyAsDouble( c2.getRealDouble())));
+					if(x >= 0 && x < fgP.nBinsX && y >= 0 && y < fgP.nBinsY)
 					{
-						long x = mapper1.map( new FloatType((float)f.applyAsDouble( c1.getRealDouble())));
-						long y = mapper2.map( new FloatType((float)f.applyAsDouble( c2.getRealDouble())));
-						if(x >= 0 && x < fgP.nBinsX && y >= 0 && y < fgP.nBinsY)
+						if(fgP.bFlipY)
 						{
-							if(fgP.bFlipY)
-							{
-								y = fgP.nBinsY - y - 1;
-							}
-							if(roi.contains( (int)x, (int)y ))
-							{
-								co1.set( c1 );
-								co2.set( c2 );
-							}
+							y = fgP.nBinsY - y - 1;
 						}
-						localCount[0]++;
-					});
-					long overallProcessed = globalPixelCount.addAndGet(localCount[0]);
-					double progress = (double) overallProcessed / totalPixels;//*100;
-					IJ.showProgress( progress );
-					return null;
-				}
-				);
-		
-		final ImagePlus impOut = ImageJFunctions.wrap( out, "")  ;
-		
+						if(roi.contains( (int)x, (int)y ))
+						{
+							co1.set( c1 );
+							co2.set( c2 );
+						}
+					}
+					localCount[0]++;
+				});
+				long overallProcessed = globalPixelCount.addAndGet(localCount[0]);
+				double progress = (double) overallProcessed / totalPixels;//*100;
+				IJ.showProgress( progress );
+				return null;
+			}
+					);
+		} catch (RuntimeException e) {
+		    // 1. CATCH: Executes if LoopBuilder or task execution throws an exception
+		    System.err.println("BigScopeScatter execution failed: " + e.getMessage());
+		    e.printStackTrace();
+
+		} catch (Exception e) {
+		    // Generic catch for any other checked exceptions (if applicable)
+		    System.err.println("An unexpected error occurred: " + e.getMessage());
+
+		} 
+		final ImagePlus impOut = ImageJFunctions.wrap( out, "");
+
 		//redo dimensions to ImageJ
 		impOut.setDimensions( 2, (int)dimsSingle[2], 1 );
 		return impOut;
