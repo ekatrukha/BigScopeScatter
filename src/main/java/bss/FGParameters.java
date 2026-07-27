@@ -295,6 +295,23 @@ public class FGParameters
 		return SpimDataLoader.loadBioFormats( cfgParamsFile.getFullDataPathFilename());
 	}
 	
+	String getChannelsNamesROI()
+	{
+		//build channel descriptions
+		String out1 = "ch" + Integer.toString( nChannel1 + 1 );
+		String out2 = "ch" + Integer.toString( nChannel2 + 1 );
+		if(bHasAxesNames)
+		{
+			out1 = out1 + "[" + sChannelX + "]_X";
+			out2 = out2 + "[" + sChannelY + "]_Y";	
+		}
+		if(nChannel1 < nChannel2)
+		{
+			return out1 + "_"+ out2;
+		}
+		return out2 + "_"+ out1;
+	}
+	
 	String getChannelsConfigurationString()
 	{
 		

@@ -24,6 +24,7 @@ import ij.CompositeImage;
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
+import ij.ImageStack;
 import ij.Prefs;
 import ij.gui.GenericDialog;
 import ij.gui.Roi;
@@ -121,7 +122,8 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 		}
 		
 		final BasicImgLoader imgLoader = spimData.getSequenceDescription().getImgLoader();
-		
+
+		//keep the order of channels
 		final RandomAccessibleInterval<T> channel1 = 
 				Cast.unchecked(  imgLoader.getSetupImgLoader(fgParams.nChannel1).getImage(0));
 		final RandomAccessibleInterval<T> channel2 = 
@@ -141,11 +143,12 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 			CompositeImage impROI = new CompositeImage(extractedImp);
 			impROI.setMode( IJ.COMPOSITE );
 			impROI.setCalibration( cal );
-			impROI.setTitle( roi.getName() );			
+			impROI.setTitle( roi.getName() + "_" + fgParams.getChannelsNamesROI());			
 			impROI.setC( 2 );
 			IJ.run(impROI, "Enhance Contrast", "saturated=0.35");
 			impROI.setC( 1 );
 			IJ.run(impROI, "Enhance Contrast", "saturated=0.35");
+			
 			switch (BSSsettings.nOutputMode)
 			{
 			case BSSsettings.BSS_ImageJ:
@@ -200,11 +203,20 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 		//half for now
 		int numThreads = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
 
+		//keep the order of channels
+		
+		int nOut1 = 0;
+		int nOut2 = 1;
+		if(fgP.nChannel1 > fgP.nChannel2)
+		{
+			nOut1 = 1;
+			nOut2 = 0;
+		}
 		// Create a TaskExecutor with the target thread count
 		try (TaskExecutor taskExecutor = TaskExecutors.fixedThreadPool(numThreads)) 
 		{
 			LoopBuilder.setImages( channel1, channel2, 
-					Views.hyperSlice( out, 2, 0 ),Views.hyperSlice( out, 2, 1 )).
+					Views.hyperSlice( out, 2, nOut1 ),Views.hyperSlice( out, 2, nOut2 )).
 			multiThreaded(taskExecutor).forEachChunk( chunk->
 			{
 				long[] localCount = new long[1];
@@ -296,7 +308,8 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 	{
 		new ImageJ();
 		//ImagePlus image = IJ.openImage("/home/eugene/Desktop/projects/BigScopeScatter/test_data/cytofluorogram_1-3.tif");
-		ImagePlus image = IJ.openImage("/home/eugene/Desktop/projects/BigScopeScatter/test_data/scatter_(2_1i)_1-3.tif");
+		//ImagePlus image = IJ.openImage("/home/eugene/Desktop/projects/BigScopeScatter/test_data/scatter_(2_1i)_1-3.tif");
+		ImagePlus image = IJ.openImage("/home/eugene/Desktop/projects/BigScopeScatter/fliptest/scatter_X(2)gant_Y(1f)BS-gant_3-4.tif");
 		
 		image.show();
 		RoiManager rMan = RoiManager.getInstance2();
@@ -304,8 +317,8 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 			rMan = new RoiManager(); // creates a new one if needed
 		}
 		//rMan.open( "/home/eugene/Desktop/projects/BigScopeScatter/test_data/RoiSet.zip" );
-		rMan.open( "/home/eugene/Desktop/projects/BigScopeScatter/test_data/RoiSet_inverted.zip" );
-		
+		//rMan.open( "/home/eugene/Desktop/projects/BigScopeScatter/test_data/RoiSet_inverted.zip" );
+		rMan.open( "/home/eugene/Desktop/projects/BigScopeScatter/fliptest/turned.roi" );
 		ExtractROIs<?> test = new ExtractROIs<>();
 		test.run( null);
 	}
