@@ -4,7 +4,7 @@ import ij.Prefs;
 
 public class BSSsettings
 {
-	public static String sVersion = "0.0.1";
+	public static String sVersion = "0.0.2";
 	public static String lastDir = Prefs.get( "BSS.lastDir", "" );
 	public static boolean bInvertY = Prefs.get( "BSS.bInvertY", true );
 	public static boolean bHasAxesNames = Prefs.get( "BSS.bHasAxesNames", false );
