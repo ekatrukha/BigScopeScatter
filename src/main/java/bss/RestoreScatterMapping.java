@@ -1,7 +1,6 @@
 package bss;
 
 import ij.IJ;
-import ij.ImageJ;
 import ij.ImagePlus;
 import ij.plugin.PlugIn;
 

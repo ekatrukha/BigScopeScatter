@@ -122,8 +122,9 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 		}
 
 		//keep the order of channels
-		final RandomAccessibleInterval<T> channel1 =  Misc.getRAIXYZT( spimData, fgParams.nChannel1 );
+		final RandomAccessibleInterval<T> channel1 = Misc.getRAIXYZT( spimData, fgParams.nChannel1 );
 		final RandomAccessibleInterval<T> channel2 = Misc.getRAIXYZT( spimData, fgParams.nChannel2 );
+		
 		double [] voxDims = spimData.getSequenceDescription().getViewSetupsOrdered().get( 0 ).getVoxelSize().dimensionsAsDoubleArray();
 		String sUnit = spimData.getSequenceDescription().getViewSetupsOrdered().get( 0 ).getVoxelSize().unit();
 		final Calibration cal = new Calibration ();

@@ -54,8 +54,8 @@ public class FGParameters
 	{
 		IJ.log( "Data path " + sDataPath );
 		IJ.log( "Data filename " + sDataFilename );
-		IJ.log( "Axis X channel number " + nChannel1 );
-		IJ.log( "Axis Y channel number " + nChannel2 );
+		IJ.log( "Axis X channel number " + nChannel1 + 1 );
+		IJ.log( "Axis Y channel number " + nChannel2 + 1);
 		IJ.log( "Invert Y axis " + bFlipY );
 		switch (nMapFunction)
 		{
