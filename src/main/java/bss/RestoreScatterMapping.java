@@ -1,6 +1,7 @@
 package bss;
 
 import ij.IJ;
+import ij.ImageJ;
 import ij.ImagePlus;
 import ij.plugin.PlugIn;
 
@@ -27,4 +28,5 @@ public class RestoreScatterMapping implements PlugIn
 		IJ.log( "BigScopeScatter v." + BSSsettings.sVersion + ". Loaded image cytofluorogram parameters." );
 		cfgParams.printParams();
 	}
+
 }

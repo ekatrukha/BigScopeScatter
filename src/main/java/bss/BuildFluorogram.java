@@ -13,7 +13,6 @@ import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.util.Cast;
 import net.imglib2.util.StopWatch;
 import net.imglib2.view.Views;
 
@@ -23,7 +22,6 @@ import ij.ImagePlus;
 import ij.Prefs;
 import ij.plugin.PlugIn;
 import mpicbg.spim.data.generic.AbstractSpimData;
-import mpicbg.spim.data.generic.sequence.BasicImgLoader;
 
 public class BuildFluorogram < T extends RealType< T > & NativeType< T > > implements PlugIn
 {
@@ -58,13 +56,8 @@ public class BuildFluorogram < T extends RealType< T > & NativeType< T > > imple
 		if(!fgDialog.showDialog( nChannels ))
 			return;
 		
-		
-		final BasicImgLoader imgLoader = spimData.getSequenceDescription().getImgLoader();
-		
-		final RandomAccessibleInterval<T> channel1 = 
-				Cast.unchecked(  imgLoader.getSetupImgLoader(fgParams.nChannel1).getImage(0));
-		final RandomAccessibleInterval<T> channel2 = 
-				Cast.unchecked(  imgLoader.getSetupImgLoader(fgParams.nChannel2).getImage(0));
+		final RandomAccessibleInterval<T> channel1 = Misc.getRAIXYZT( spimData, fgParams.nChannel1 );
+		final RandomAccessibleInterval<T> channel2 = Misc.getRAIXYZT( spimData, fgParams.nChannel2 );
 		
 		IJ.log("BigScopeScatter v." + BSSsettings.sVersion + ": Building 2D histogram.");
 		fgParams.printParams();

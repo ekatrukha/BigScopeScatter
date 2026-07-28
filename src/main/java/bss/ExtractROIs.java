@@ -1,5 +1,7 @@
 package bss;
 
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.DoubleUnaryOperator;
@@ -16,7 +18,6 @@ import net.imglib2.parallel.TaskExecutors;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.util.Cast;
 import net.imglib2.view.Views;
 
 import bss.io.GetFolderDialog;
@@ -24,19 +25,18 @@ import ij.CompositeImage;
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
-import ij.ImageStack;
 import ij.Prefs;
 import ij.gui.GenericDialog;
+import ij.gui.ImageWindow;
 import ij.gui.Roi;
 import ij.measure.Calibration;
 import ij.plugin.PlugIn;
 import ij.plugin.frame.RoiManager;
 import mpicbg.spim.data.generic.AbstractSpimData;
-import mpicbg.spim.data.generic.sequence.BasicImgLoader;
 
 public class ExtractROIs < T extends RealType< T > & NativeType< T > > implements PlugIn
 {
-	/**cytofluorogram parameters **/
+	/** cytofluorogram parameters **/
 	final FGParameters fgParams = new FGParameters();	
 	
 	/** ROI manager instance **/
@@ -120,14 +120,10 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 			return;
 			
 		}
-		
-		final BasicImgLoader imgLoader = spimData.getSequenceDescription().getImgLoader();
 
 		//keep the order of channels
-		final RandomAccessibleInterval<T> channel1 = 
-				Cast.unchecked(  imgLoader.getSetupImgLoader(fgParams.nChannel1).getImage(0));
-		final RandomAccessibleInterval<T> channel2 = 
-				Cast.unchecked(  imgLoader.getSetupImgLoader(fgParams.nChannel2).getImage(0));
+		final RandomAccessibleInterval<T> channel1 =  Misc.getRAIXYZT( spimData, fgParams.nChannel1 );
+		final RandomAccessibleInterval<T> channel2 = Misc.getRAIXYZT( spimData, fgParams.nChannel2 );
 		double [] voxDims = spimData.getSequenceDescription().getViewSetupsOrdered().get( 0 ).getVoxelSize().dimensionsAsDoubleArray();
 		String sUnit = spimData.getSequenceDescription().getViewSetupsOrdered().get( 0 ).getVoxelSize().unit();
 		final Calibration cal = new Calibration ();
@@ -135,11 +131,15 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 		cal.pixelHeight = voxDims[1];
 		cal.pixelDepth  = voxDims[2];
 		cal.setUnit( sUnit );
-		
+
 		for (final Roi roi:rois)
 		{
 			IJ.showStatus( "Processing ROI " + roi.getName() );
-			ImagePlus extractedImp = getFilteredPairFromROIMap(roi, channel1, channel2, fgParams);
+			
+			final DiskCachedCellImg< T, ? > roiRAI = getFilteredPairFromROIMap(roi, channel1, channel2, fgParams);
+			//wrap to ImagePlus
+			ImagePlus extractedImp = ImageJFunctions.wrap( roiRAI, "");
+
 			CompositeImage impROI = new CompositeImage(extractedImp);
 			impROI.setMode( IJ.COMPOSITE );
 			impROI.setCalibration( cal );
@@ -153,10 +153,21 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 			{
 			case BSSsettings.BSS_ImageJ:
 				impROI.show();
-
+				final ImageWindow window = impROI.getWindow();
+		    	if (window != null) 
+		    	{
+		    		window.addWindowListener(new WindowAdapter() {
+		    			@Override
+		    			public void windowClosed(WindowEvent e) {
+		    				//Shuts down the internal IoSync and releases disk resources safely
+		    				roiRAI.shutdown();
+		    			}
+		    		});
+		    	}
 				break;
 			case BSSsettings.BSS_Tiff:
 				IJ.saveAs(impROI, "Tiff", nOutputPath + roi.getName() + ".tif");
+				roiRAI.shutdown();
 				break;
 			}
 			IJ.log( "Processed ROI " + roi.getName() );
@@ -167,7 +178,7 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 		IJ.log( "All ROIs done" );
 	}
 	
-	public static < T extends RealType< T > & NativeType< T > > ImagePlus 
+	public static < T extends RealType< T > & NativeType< T > > DiskCachedCellImg< T, ? > 
 	getFilteredPairFromROIMap(final Roi roi, final RandomAccessibleInterval<T> channel1, 
 			final RandomAccessibleInterval<T> channel2, final FGParameters fgP)
 	{
@@ -180,22 +191,26 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 		Real1dBinMapper<FloatType> mapper1 = new Real1dBinMapper<>(min1, max1, fgP.nBinsX, false);
 		Real1dBinMapper<FloatType> mapper2 = new Real1dBinMapper<>(min2, max2, fgP.nBinsY, false);
 
+		int numD = channel1.numDimensions();
 		long[] dimsSingle = channel1.dimensionsAsLongArray();
-		long [] dims = new long [dimsSingle.length + 1];
+		long [] dims = new long [numD + 1];
 		for(int d = 0; d < 2; d ++)
 		{
 			dims[d] = dimsSingle[d];
 		}
 		//add 2 channel dimensions, always #2 (after XY (01))
 		dims[2] = 2;
-		dims[3] = dimsSingle[2];
+		for( int d = 2; d < numD; d++)
+		{
+			dims[d+1] = dimsSingle[d];
+		}
 		
 		int[] blockSize = { 32 };
 		DiskCachedCellImgOptions options = DiskCachedCellImgOptions.options()
 			    .cellDimensions(blockSize);
 		DiskCachedCellImgFactory<T> factory = 
 			    new DiskCachedCellImgFactory<>(channel1.getType(), options);
-		DiskCachedCellImg< T, ? > out = factory.create(dims);
+		final DiskCachedCellImg< T, ? > out = factory.create(dims);
 		
 		AtomicLong globalPixelCount = new AtomicLong(0);
 		
@@ -226,8 +241,6 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 					long y = mapper2.map( new FloatType((float)f.applyAsDouble( c2.getRealDouble())));
 					if(x >= 0 && x < fgP.nBinsX && y >= 0 && y < fgP.nBinsY)
 					{
-						
-						///VERIFY THIS!!!!
 						if(fgP.bFlipY)
 						{
 							y = fgP.nBinsY - y - 1;
@@ -256,12 +269,9 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 		    System.err.println("An unexpected error occurred: " + e.getMessage());
 
 		} 
-		final ImagePlus impOut = ImageJFunctions.wrap( out, "");
-
-		//redo dimensions to ImageJ
-		impOut.setDimensions( 2, (int)dimsSingle[2], 1 );
-		return impOut;
+		return out;
 	}
+	
 	
 	boolean verifyROIs()
 	{
@@ -309,7 +319,8 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 		new ImageJ();
 		//ImagePlus image = IJ.openImage("/home/eugene/Desktop/projects/BigScopeScatter/test_data/cytofluorogram_1-3.tif");
 		//ImagePlus image = IJ.openImage("/home/eugene/Desktop/projects/BigScopeScatter/test_data/scatter_(2_1i)_1-3.tif");
-		ImagePlus image = IJ.openImage("/home/eugene/Desktop/projects/BigScopeScatter/fliptest/scatter_X(2)gant_Y(1f)BS-gant_3-4.tif");
+		ImagePlus image = IJ.openImage("/home/eugene/Desktop/projects/BigScopeScatter/test_data/multi"
+		+"dim/scatter_X(1)gant_Y(2f)BS-gant_time_and_z.tif");
 		
 		image.show();
 		RoiManager rMan = RoiManager.getInstance2();
@@ -318,7 +329,7 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 		}
 		//rMan.open( "/home/eugene/Desktop/projects/BigScopeScatter/test_data/RoiSet.zip" );
 		//rMan.open( "/home/eugene/Desktop/projects/BigScopeScatter/test_data/RoiSet_inverted.zip" );
-		rMan.open( "/home/eugene/Desktop/projects/BigScopeScatter/fliptest/turned.roi" );
+		rMan.open( "/home/eugene/Desktop/projects/BigScopeScatter/test_data/multidim/roi.roi" );
 		ExtractROIs<?> test = new ExtractROIs<>();
 		test.run( null);
 	}
