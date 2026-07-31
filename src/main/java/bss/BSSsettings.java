@@ -21,4 +21,8 @@ public class BSSsettings
 	public static int nOutputMode = (int)Prefs.get( "BSS.nOutputMode", BSS_Tiff );
 	public static final int BSS_Out_ROI = 0, BSS_Out_ratioXY = 1, BSS_Out_ratioYX = 2;
 	public static int nOutputType = (int)Prefs.get( "BSS.nOutputType", BSS_Out_ROI );
+	public static boolean bSubtractBG = Prefs.get( "BSS.bSubtractBG", false );
+	public static float fBGX = (int)Prefs.get( "BSS.fBGX", 0.);
+	public static float fBGY = (int)Prefs.get( "BSS.fBGY", 0.);
+
 }

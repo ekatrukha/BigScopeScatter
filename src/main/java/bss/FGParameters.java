@@ -18,8 +18,8 @@ public class FGParameters
 {
 	public String sDataPath = "";
 	public String sDataFilename = "";
-	public int nChannel1;
-	public int nChannel2;
+	public int nChannelX;
+	public int nChannelY;
 	public boolean bFlipY = false;
 	public boolean bHasAxesNames = false;
 	public String sChannelX = "";
@@ -54,8 +54,8 @@ public class FGParameters
 	{
 		IJ.log( "Data path " + sDataPath );
 		IJ.log( "Data filename " + sDataFilename );
-		IJ.log( "Axis X channel number " + nChannel1 + 1 );
-		IJ.log( "Axis Y channel number " + nChannel2 + 1);
+		IJ.log( "Axis X channel number " + Integer.toString( nChannelX + 1 ));
+		IJ.log( "Axis Y channel number " + Integer.toString( nChannelY + 1 ));
 		IJ.log( "Invert Y axis " + bFlipY );
 		switch (nMapFunction)
 		{
@@ -74,8 +74,7 @@ public class FGParameters
 		IJ.log("Intensity range axis X, min " + df.format( minmax1[0] ) + " max " + df.format( minmax1[1] ));
 		IJ.log("Intensity range axis Y, min " + df.format( minmax2[0] ) + " max " + df.format( minmax2[1] ));
 		
-	}
-	
+	}	
 
 	/**
 	 * Encodes parameters as key-value properties inside the ImagePlus.
@@ -87,8 +86,8 @@ public class FGParameters
 	    imp.setProp("BSS_sVersion", BSSsettings.sVersion);
 	    imp.setProp("BSS_sDataPath", sDataPath);
 	    imp.setProp("BSS_sDataFilename", sDataFilename);
-	    imp.setProp("BSS_nChannel1", String.valueOf(nChannel1 + 1));
-	    imp.setProp("BSS_nChannel2", String.valueOf(nChannel2 + 1));
+	    imp.setProp("BSS_nChannel1", String.valueOf(nChannelX + 1));
+	    imp.setProp("BSS_nChannel2", String.valueOf(nChannelY + 1));
 	    imp.setProp("BSS_bFlipY", String.valueOf(bFlipY));
 	    imp.setProp("BSS_bHasAxesNames", String.valueOf(bHasAxesNames));
 	    imp.setProp("BSS_sChannelX", sChannelX);
@@ -129,12 +128,12 @@ public class FGParameters
 			bParseOk = false;
 
 		if ((valD = imp.getNumericProp("BSS_nChannel1")) != Double.NaN) 
-			nChannel1  = (int)valD - 1;
+			nChannelX  = (int)valD - 1;
 		else
 			bParseOk = false;
 
 		if ((valD = imp.getNumericProp("BSS_nChannel2")) != Double.NaN) 
-			nChannel2  = (int)valD - 1;
+			nChannelY  = (int)valD - 1;
 		else
 			bParseOk = false;
 
@@ -226,8 +225,8 @@ public class FGParameters
     	final double binWy = (max2 - min2) / histParams.nBinsY;	
 		final ImageCanvas canvas = imp.getCanvas();
 		final ImageProcessor ip = imp.getProcessor();
-		String prefixX = "IntX_" + "ch" +  Integer.toString( histParams.nChannel1 + 1);
-		String prefixY = "IntY_" + "ch" +  Integer.toString( histParams.nChannel2 + 1);
+		String prefixX = "IntX_" + "ch" +  Integer.toString( histParams.nChannelX + 1);
+		String prefixY = "IntY_" + "ch" +  Integer.toString( histParams.nChannelY + 1);
 
 		if(histParams.bHasAxesNames)
 		{
@@ -298,14 +297,14 @@ public class FGParameters
 	String getChannelsNamesROI()
 	{
 		//build channel descriptions
-		String out1 = "ch" + Integer.toString( nChannel1 + 1 );
-		String out2 = "ch" + Integer.toString( nChannel2 + 1 );
+		String out1 = "ch" + Integer.toString( nChannelX + 1 );
+		String out2 = "ch" + Integer.toString( nChannelY + 1 );
 		if(bHasAxesNames)
 		{
 			out1 = out1 + "[" + sChannelX + "]_X";
 			out2 = out2 + "[" + sChannelY + "]_Y";	
 		}
-		if(nChannel1 < nChannel2)
+		if(nChannelX < nChannelY)
 		{
 			return out1 + "_"+ out2;
 		}
@@ -315,8 +314,8 @@ public class FGParameters
 	String getChannelsConfigurationString()
 	{
 		
-		String out1 = "X(" + Integer.toString( nChannel1 + 1 ) + ")";
-		String out2 = "Y(" + Integer.toString( nChannel2 + 1 );
+		String out1 = "X(" + Integer.toString( nChannelX + 1 ) + ")";
+		String out2 = "Y(" + Integer.toString( nChannelY + 1 );
 		if(bFlipY)
 			out2 = out2 + "f";
 		out2 = out2 + ")";

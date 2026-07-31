@@ -65,7 +65,7 @@ public class RoiProcess
 		//keep the order of channels		
 		int nOut1 = 0;
 		int nOut2 = 1;
-		if(fgP.nChannel1 > fgP.nChannel2)
+		if(fgP.nChannelX > fgP.nChannelY)
 		{
 			nOut1 = 1;
 			nOut2 = 0;
@@ -117,7 +117,8 @@ public class RoiProcess
 	public static < T extends RealType< T > & NativeType< T > > 
 			DiskCachedCellImg< FloatType, ? > getRatioImageFromROIMap(
 					final Roi roi, final RandomAccessibleInterval<T> channel1, 
-			final RandomAccessibleInterval<T> channel2, final FGParameters fgP, final float fBG1, final float fBG2 )
+			final RandomAccessibleInterval<T> channel2, final FGParameters fgP, 
+			final float fBG1, final float fBG2, final boolean bYX )
 	{
 		final DoubleUnaryOperator f = fgP.getMapFunction();
 		double min1 = f.applyAsDouble( fgP.minmax1[0] );
@@ -156,7 +157,8 @@ public class RoiProcess
 				{
 					long x = mapper1.map( new FloatType((float)f.applyAsDouble( c1.getRealDouble())));
 					long y = mapper2.map( new FloatType((float)f.applyAsDouble( c2.getRealDouble())));
-
+					float ch1;
+					float ch2;
 					if(x >= 0 && x < fgP.nBinsX && y >= 0 && y < fgP.nBinsY)
 					{
 						if(fgP.bFlipY)
@@ -165,9 +167,16 @@ public class RoiProcess
 						}
 						if(roi.contains( (int)x, (int)y ))
 						{
-							float ch1 = (c1.getRealFloat() - fBG1);
-							float ch2 = (c2.getRealFloat() - fBG2);
-							co.set(  ch1/ch2 );
+							ch1 = (c1.getRealFloat() - fBG1);
+							ch2 = (c2.getRealFloat() - fBG2);
+							if(bYX)
+							{
+								co.set( ch2/ch1 );
+							}
+							else
+							{
+								co.set( ch1/ch2 );
+							}
 						}
 					}
 					localCount[0]++;

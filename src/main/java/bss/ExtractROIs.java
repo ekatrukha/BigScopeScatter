@@ -4,21 +4,18 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 
-
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.cache.img.DiskCachedCellImg;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.util.Cast;
 
-
-import bss.io.GetFolderDialog;
 import ij.CompositeImage;
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
-import ij.Prefs;
-import ij.gui.GenericDialog;
+
 import ij.gui.ImageWindow;
 import ij.gui.Roi;
 import ij.measure.Calibration;
@@ -36,7 +33,7 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 	
 	ArrayList<Roi> rois = new ArrayList<>();
 	
-	String nOutputPath = "";
+	String sOutputPath = "";
 	
 	@Override
 	public void run( String arg )
@@ -95,8 +92,11 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 		}
 		
 		//ask for the output
-		if(!outputSelectionDialog(fgParams))
+		final DialogOutputROI gdOut = new DialogOutputROI(fgParams); 
+		if(!gdOut.showDialog())
 			return;
+		
+		sOutputPath = gdOut.sOutputPath;
 		
 		//ok, assume spimData not a null now
 		int nChannels = spimData.getSequenceDescription().getViewSetupsOrdered().size();
@@ -106,16 +106,15 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 			IJ.log( "You need image with at least 2 channels as input");
 			return;
 		}
-		if(fgParams.nChannel1 > nChannels || fgParams.nChannel2 > nChannels)
+		if(fgParams.nChannelX > nChannels || fgParams.nChannelY > nChannels)
 		{
 			IJ.log( "Loaded image does not have channels from stored cytofluorogram!");
-			return;
-			
+			return;		
 		}
 
 		//keep the order of channels
-		final RandomAccessibleInterval<T> channel1 = Misc.getRAIXYZT( spimData, fgParams.nChannel1 );
-		final RandomAccessibleInterval<T> channel2 = Misc.getRAIXYZT( spimData, fgParams.nChannel2 );
+		final RandomAccessibleInterval<T> channel1 = Misc.getRAIXYZT( spimData, fgParams.nChannelX );
+		final RandomAccessibleInterval<T> channel2 = Misc.getRAIXYZT( spimData, fgParams.nChannelY );
 		
 		double [] voxDims = spimData.getSequenceDescription().getViewSetupsOrdered().get( 0 ).getVoxelSize().dimensionsAsDoubleArray();
 		String sUnit = spimData.getSequenceDescription().getViewSetupsOrdered().get( 0 ).getVoxelSize().unit();
@@ -124,25 +123,79 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 		cal.pixelHeight = voxDims[1];
 		cal.pixelDepth  = voxDims[2];
 		cal.setUnit( sUnit );
-
+		
+		switch(BSSsettings.nOutputType)
+		{
+		case BSSsettings.BSS_Out_ROI:
+			IJ.log( "Extracting 2 channel images for each ROI." );
+			break;
+		case BSSsettings.BSS_Out_ratioXY:
+			IJ.log( "Extracting XY ratio for each ROI." );
+			if(BSSsettings.bSubtractBG)
+			{
+				IJ.log( "Subtracting BG axis X" + Float.toString( BSSsettings.fBGX ) +
+						" axis Y" + Float.toString( BSSsettings.fBGY ));
+			}
+			break;
+		case BSSsettings.BSS_Out_ratioYX:
+			IJ.log( "Extracting YX ratio for each ROI." );
+			if(BSSsettings.bSubtractBG)
+			{
+				IJ.log( "Subtracting BG axis X" + Float.toString( BSSsettings.fBGX ) +
+						" axis Y" + Float.toString( BSSsettings.fBGY ));
+			}			
+			break;	
+		}
+		
+		float fBGX = 0.0f;
+		float fBGY = 0.0f;
+		
+		if(BSSsettings.bSubtractBG)
+		{
+			fBGX = BSSsettings.fBGX;
+			fBGY = BSSsettings.fBGY;
+		}
+		boolean bYX = false;
+		if (BSSsettings.nOutputType == BSSsettings.BSS_Out_ratioYX )
+		{
+			bYX = true;
+		}
+		
 		for (final Roi roi:rois)
 		{
 			IJ.showStatus( "Processing ROI " + roi.getName() );
 			
-			final DiskCachedCellImg< T, ? > roiRAI = 
-					RoiProcess.getFilteredPairFromROIMap(roi, channel1, channel2, fgParams);
+			final DiskCachedCellImg< T, ? > roiRAI;
+			switch(BSSsettings.nOutputType)
+			{
+			case BSSsettings.BSS_Out_ROI:
+				roiRAI = RoiProcess.getFilteredPairFromROIMap(roi, channel1, channel2, fgParams);
+				break;
+			default:
+				roiRAI = Cast.unchecked( RoiProcess.getRatioImageFromROIMap( roi, channel1, channel2, 
+						fgParams, fBGX, fBGY, bYX )) ;
+			}
 			//wrap to ImagePlus
 			ImagePlus extractedImp = ImageJFunctions.wrap( roiRAI, "");
-
-			CompositeImage impROI = new CompositeImage(extractedImp);
-			impROI.setMode( IJ.COMPOSITE );
-			impROI.setCalibration( cal );
-			impROI.setTitle( roi.getName() + "_" + fgParams.getChannelsNamesROI());			
-			impROI.setC( 2 );
-			IJ.run(impROI, "Enhance Contrast", "saturated=0.35");
-			impROI.setC( 1 );
-			IJ.run(impROI, "Enhance Contrast", "saturated=0.35");
+			ImagePlus impROI = null;
+			switch (BSSsettings.nOutputType)
+			{
+			case BSSsettings.BSS_Out_ROI:
+				impROI = new CompositeImage(extractedImp);
+				((CompositeImage)impROI).setMode( IJ.COMPOSITE );				
+				impROI.setTitle( roi.getName() + "_" + fgParams.getChannelsNamesROI());			
+				impROI.setC( 2 );
+				IJ.run(impROI, "Enhance Contrast", "saturated=0.35");
+				impROI.setC( 1 );
+				IJ.run(impROI, "Enhance Contrast", "saturated=0.35");
+				break;
+			default:
+				impROI = extractedImp;
+				impROI.setTitle(getRatioTitle(roi, fgParams));
+				IJ.run(impROI, "Enhance Contrast", "saturated=0.35");
+			}
 			
+			impROI.setCalibration( cal );
 			switch (BSSsettings.nOutputMode)
 			{
 			case BSSsettings.BSS_ImageJ:
@@ -160,7 +213,7 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 		    	}
 				break;
 			case BSSsettings.BSS_Tiff:
-				IJ.saveAs(impROI, "Tiff", nOutputPath + roi.getName() + ".tif");
+				IJ.saveAs(impROI, "Tiff", sOutputPath + impROI.getTitle() + ".tif");
 				roiRAI.shutdown();
 				break;
 			}
@@ -172,7 +225,28 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 		IJ.log( "All ROIs done" );
 	}
 	
-
+	String getRatioTitle(final Roi roi, final FGParameters fgP)
+	{
+		String sOut = "ratio_";
+		String sXName = "";
+		String sYName = "";
+		if(fgP.bHasAxesNames)
+		{
+			sXName = "[" + fgP.sChannelX + "]";
+			sYName = "[" + fgP.sChannelX + "]";
+		}
+		if(BSSsettings.nOutputType == BSSsettings.BSS_Out_ratioXY)		
+		{
+			sOut = sOut +"X" + sXName + "Y" + sYName + "_";
+		}
+		else
+		{
+			sOut = sOut +"Y" + sYName + "X" + sXName + "_";
+			
+		}
+		
+		return sOut + roi.getName();
+	}
 	
 	
 	boolean verifyROIs()
@@ -193,46 +267,15 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 		return true;
 	}
 	
-	boolean outputSelectionDialog(final FGParameters fgP)
-	{
-		final GenericDialog gdOutput = new GenericDialog( "Output parameters" );
-		final String [] sOutputType = new String[] {"Scatter ROIs (2 channels)", "Ratio axes X/Y", "Ratio axes Y/X"};
-		final String [] sOutputDisk = new String[] {"show in Fiji", "Save as TIFFs"};
-
-		gdOutput.addChoice( "Image:", sOutputType , sOutputType [ BSSsettings.nOutputType  ] );
-		gdOutput.addChoice( "Extract to:", sOutputDisk , sOutputDisk [ BSSsettings.nOutputMode ] );
-		if(fgP.bHasAxesNames)
-		{
-			gdOutput.addMessage( "Axis X [" + fgP.sChannelX + "]  Axis Y [" + fgP.sChannelY +"]" );
-		}
-		gdOutput.showDialog();
-		
-		if ( gdOutput.wasCanceled() )
-			return false;
-
-		BSSsettings.nOutputType = gdOutput.getNextChoiceIndex();
-		Prefs.set( "BSS.nOutputType", BSSsettings.nOutputType );
-		
-		BSSsettings.nOutputMode = gdOutput.getNextChoiceIndex();
-		Prefs.set( "BSS.nOutputMode", BSSsettings.nOutputMode );
-		
-		//ask for the folder
-		if(BSSsettings.nOutputMode == BSSsettings.BSS_Tiff)
-		{
-			nOutputPath = GetFolderDialog.getSelectedFolder("Save TIFFs to folder..", false);
-			if (nOutputPath == null)
-				return false;
-		}
-		return true;
-	}
 	
 	public static void main(String[] args) throws Exception 
 	{
 		new ImageJ();
 		//ImagePlus image = IJ.openImage("/home/eugene/Desktop/projects/BigScopeScatter/test_data/cytofluorogram_1-3.tif");
 		//ImagePlus image = IJ.openImage("/home/eugene/Desktop/projects/BigScopeScatter/test_data/scatter_(2_1i)_1-3.tif");
-		ImagePlus image = IJ.openImage("/home/eugene/Desktop/projects/BigScopeScatter/test_data/multi"
-		+"dim/scatter_X(1)gant_Y(2f)BS-gant_time_and_z.tif");
+		ImagePlus image = IJ.openImage("/home/eugene/Desktop/projects/BigScopeScatter/test_data/multidim/"
+		+"scatter_X(1)gant_Y(2f)BS-gant_3-4.tif");
+		//+"scatter_X(1)gant_Y(2f)BS-gant_time_and_z.tif");
 		
 		image.show();
 		RoiManager rMan = RoiManager.getInstance2();

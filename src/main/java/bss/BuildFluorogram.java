@@ -51,13 +51,13 @@ public class BuildFluorogram < T extends RealType< T > & NativeType< T > > imple
 			IJ.log( "You need image with at least 2 channels as input");
 			return;
 		}
-		FluorogramParamsDialog fgDialog = new FluorogramParamsDialog(fgParams);
+		DialogFluorogramParams fgDialog = new DialogFluorogramParams(fgParams);
 		//show parameters dialog
 		if(!fgDialog.showDialog( nChannels ))
 			return;
 		
-		final RandomAccessibleInterval<T> channel1 = Misc.getRAIXYZT( spimData, fgParams.nChannel1 );
-		final RandomAccessibleInterval<T> channel2 = Misc.getRAIXYZT( spimData, fgParams.nChannel2 );
+		final RandomAccessibleInterval<T> channel1 = Misc.getRAIXYZT( spimData, fgParams.nChannelX );
+		final RandomAccessibleInterval<T> channel2 = Misc.getRAIXYZT( spimData, fgParams.nChannelY );
 		
 		IJ.log("BigScopeScatter v." + BSSsettings.sVersion + ": Building 2D histogram.");
 		fgParams.printParams();

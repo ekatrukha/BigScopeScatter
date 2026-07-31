@@ -9,7 +9,7 @@ import ij.Prefs;
 import ij.gui.DialogListener;
 import ij.gui.GenericDialog;
 
-public class FluorogramParamsDialog implements DialogListener
+public class DialogFluorogramParams implements DialogListener
 {
 	final GenericDialog gdHist = new GenericDialog( "Build cytofluorogram" );
 	
@@ -19,7 +19,7 @@ public class FluorogramParamsDialog implements DialogListener
 	TextField sCh1;
 	TextField sCh2;
 	
-	public FluorogramParamsDialog(final FGParameters fgParams)
+	public DialogFluorogramParams(final FGParameters fgParams)
 	{
 		this.fgParams = fgParams;
 	}
@@ -92,9 +92,9 @@ public class FluorogramParamsDialog implements DialogListener
 	void readDialogParameters()
 	{
 		
-		fgParams.nChannel1 = gdHist.getNextChoiceIndex();
-		fgParams.nChannel2 = gdHist.getNextChoiceIndex();
-		if(fgParams.nChannel1  == fgParams.nChannel2)
+		fgParams.nChannelX = gdHist.getNextChoiceIndex();
+		fgParams.nChannelY = gdHist.getNextChoiceIndex();
+		if(fgParams.nChannelX  == fgParams.nChannelY)
 		{
 			IJ.log("Warning! Channel X axis is equal to Channel Y!");
 		}
