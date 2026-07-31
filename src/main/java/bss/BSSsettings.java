@@ -19,4 +19,6 @@ public class BSSsettings
 	public static double dMaxY = (int)Prefs.get( "BSS.dMaxY", 65535.);
 	public static final int BSS_ImageJ = 0, BSS_Tiff = 1; 
 	public static int nOutputMode = (int)Prefs.get( "BSS.nOutputMode", BSS_Tiff );
+	public static final int BSS_Out_ROI = 0, BSS_Out_ratioXY = 1, BSS_Out_ratioYX = 2;
+	public static int nOutputType = (int)Prefs.get( "BSS.nOutputType", BSS_Out_ROI );
 }
