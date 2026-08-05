@@ -33,13 +33,13 @@ public class DialogFluorogramParams implements DialogListener
 			sChannels[i] = "channel " + Integer.toString( i + 1 );
 		}
 		final String [] sMapping = new String[] {"Linear", "Log"};
-		gdHist.addChoice( "For X-axis use ", sChannels, sChannels[ 0 ] );
-		gdHist.addChoice( "For Y-axis use ", sChannels, sChannels[ 1 ] );
-		gdHist.addCheckbox( "Invert Y-axis ", BSSsettings.bInvertY );
-		gdHist.addChoice( "Axis mapping ", sMapping, sMapping[BSSsettings.nMapFunction] );
+		gdHist.addChoice( "For_X-axis use ", sChannels, sChannels[ 0 ] );
+		gdHist.addChoice( "For_Y-axis use ", sChannels, sChannels[ 1 ] );
+		gdHist.addCheckbox( "Invert_Y-axis ", BSSsettings.bInvertY );
+		gdHist.addChoice( "Axis_mapping ", sMapping, sMapping[BSSsettings.nMapFunction] );
 		
-		gdHist.addNumericField( "Bins number X ", BSSsettings.nBinsX, 0);
-		gdHist.addNumericField( "Bins number Y ", BSSsettings.nBinsY, 0);
+		gdHist.addNumericField( "Bins_number_X ", BSSsettings.nBinsX, 0);
+		gdHist.addNumericField( "Bins_number_Y ", BSSsettings.nBinsY, 0);
 
 		gdHist.addMessage( "Intensity ranges" );
 		gdHist.addMessage( "Intensity range X ch " );
@@ -51,9 +51,9 @@ public class DialogFluorogramParams implements DialogListener
 		gdHist.addToSameRow();
 		gdHist.addNumericField("MaxY ", BSSsettings.dMaxY);
 		gdHist.addCheckbox( "Add axes names ", BSSsettings.bHasAxesNames );
-		gdHist.addStringField( "X", BSSsettings.sChannelX );
+		gdHist.addStringField( "X_", BSSsettings.sChannelX );
 		gdHist.addToSameRow();
-		gdHist.addStringField( "Y", BSSsettings.sChannelY );
+		gdHist.addStringField( "Y_", BSSsettings.sChannelY );
 		cAxesNames = ( Checkbox ) gdHist.getCheckboxes().get( 1 );
 		sCh1 = ( TextField ) gdHist.getStringFields().get( 0 );
 		sCh2 = ( TextField ) gdHist.getStringFields().get( 1 );

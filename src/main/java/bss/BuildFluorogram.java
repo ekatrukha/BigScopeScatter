@@ -20,6 +20,7 @@ import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
 import ij.Prefs;
+import ij.io.OpenDialog;
 import ij.plugin.PlugIn;
 import mpicbg.spim.data.generic.AbstractSpimData;
 
@@ -119,20 +120,13 @@ public class BuildFluorogram < T extends RealType< T > & NativeType< T > > imple
 	
 	public static String openFilenameDialog()
 	{
+		OpenDialog openFile = new OpenDialog ("Open BioFormats or XML/HDF5 files", BSSsettings.lastDir, "*.*" );
 		
-		JFileChooser chooser = new JFileChooser(BSSsettings.lastDir );
-		chooser.setDialogTitle( "Open BioFormats or XML/HDF5 files" );
-
-		int returnVal = chooser.showOpenDialog(null);
-
-		if(returnVal == JFileChooser.APPROVE_OPTION) 
-		{
-			String sFolder = chooser.getSelectedFile().getParent();
-			BSSsettings.lastDir = sFolder;
-			Prefs.set( "BSS.lastDir", sFolder );
-			return chooser.getSelectedFile().getPath();
-		}
-		return null;
+		if(openFile.getDirectory() == null)
+			return null;
+		BSSsettings.lastDir  = openFile.getDirectory();
+		Prefs.set( "BSS.lastDir", BSSsettings.lastDir );
+		return openFile.getPath();
 	}
 	
 	public static void main(String[] args) throws Exception 

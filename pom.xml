@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.scijava</groupId>
 		<artifactId>pom-scijava</artifactId>
-		<version>43.0.0</version>
+		<version>45.0.0</version>
 		<relativePath />
 	</parent>
 
@@ -79,7 +79,7 @@
 		<license.licenseName>bsd_2</license.licenseName>
         <license.copyrightOwners>Cell Biology, Neurobiology and Biophysics Department of Utrecht University.</license.copyrightOwners>  			
 		<license.excludes>**/resources/**</license.excludes>
-		<bdv-loaders.version>0.10.0</bdv-loaders.version>
+		<bdv-loaders.version>0.22.0</bdv-loaders.version>
 		
 	</properties>
 
@@ -145,11 +145,6 @@
 		<dependency>
 			<groupId>net.imglib2</groupId>
 			<artifactId>imglib2-ij</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>nl.uu.science.cellbiology</groupId>
-			<artifactId>AveragingND</artifactId>
-			<version>0.1.0</version>
 		</dependency>
 	</dependencies>
 	<repositories>		

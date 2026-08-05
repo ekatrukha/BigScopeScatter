@@ -133,16 +133,16 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 			IJ.log( "Extracting XY ratio for each ROI." );
 			if(BSSsettings.bSubtractBG)
 			{
-				IJ.log( "Subtracting BG axis X" + Float.toString( BSSsettings.fBGX ) +
-						" axis Y" + Float.toString( BSSsettings.fBGY ));
+				IJ.log( "Subtracting BG values axis X " + Float.toString( BSSsettings.fBGX ) +
+						" axis Y " + Float.toString( BSSsettings.fBGY ));
 			}
 			break;
 		case BSSsettings.BSS_Out_ratioYX:
 			IJ.log( "Extracting YX ratio for each ROI." );
 			if(BSSsettings.bSubtractBG)
 			{
-				IJ.log( "Subtracting BG axis X" + Float.toString( BSSsettings.fBGX ) +
-						" axis Y" + Float.toString( BSSsettings.fBGY ));
+				IJ.log( "Subtracting BG values axis X " + Float.toString( BSSsettings.fBGX ) +
+						" axis Y " + Float.toString( BSSsettings.fBGY ));
 			}			
 			break;	
 		}
@@ -233,7 +233,7 @@ public class ExtractROIs < T extends RealType< T > & NativeType< T > > implement
 		if(fgP.bHasAxesNames)
 		{
 			sXName = "[" + fgP.sChannelX + "]";
-			sYName = "[" + fgP.sChannelX + "]";
+			sYName = "[" + fgP.sChannelY + "]";
 		}
 		if(BSSsettings.nOutputType == BSSsettings.BSS_Out_ratioXY)		
 		{
